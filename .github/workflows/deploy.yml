@@ -1,8 +1,13 @@
 name: Deploy to GitHub Pages
 
+# Manual only. GitHub Pages needs either a public repository or a paid plan, and
+# this repository is deliberately private: content/ holds a verbatim transcription
+# of Anthropic's exam guide including the official sample questions and their keys.
+#
+# To turn on automatic deploys once Pages is available for this repository:
+#   1. Settings -> Pages -> Source: GitHub Actions
+#   2. add the push trigger back below
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 # Allow one concurrent deployment, letting an in-progress run finish.
