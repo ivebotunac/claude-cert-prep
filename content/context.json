@@ -1,0 +1,154 @@
+{
+  "_note": "Researched context, not the official exam guide. exam.json holds what the guide itself states; this file holds everything gathered around it. Where the two disagree, the guide wins.",
+  "researchedOn": "2026-08-31",
+
+  "credentials": [
+    { "code": "CCAO-F", "name": "Claude Certified Associate – Foundations", "note": "Associate track. Not this exam." },
+    { "code": "CCAR-F", "name": "Claude Certified Architect – Foundations", "note": "This exam. $125, 60 items, 120 minutes, 720 to pass, valid 12 months.", "you": true },
+    { "code": "CCAR-P", "name": "Claude Certified Architect – Professional", "note": "The next step up on the architect track." },
+    { "code": "CCDV-F", "name": "Claude Certified Developer – Foundations", "note": "Developer track. Separate attempt limits." }
+  ],
+
+  "logistics": {
+    "language": "English",
+    "seatTimeMinutes": 135,
+    "testTimeMinutes": 120,
+    "badge": "Credly digital badge on passing",
+    "eligibility": "Open to organizations in the Claude Partner Network. No formal course prerequisite is stated on the public listing, so the learning path is recommended rather than required.",
+    "onvue": [
+      "Supported computer with webcam, microphone and speaker, and exactly one display",
+      "At least 6 Mbps down and 2 Mbps up",
+      "No VPNs, no virtual machines, no corporate or public networks, no headphones",
+      "Check-in opens 30 minutes early: identity photos plus a 360-degree room scan",
+      "The session is recorded; you must stay alone and in view, must not read aloud, must not touch a phone or record the screen, and may not leave except for an approved break"
+    ]
+  },
+
+  "learningPath": {
+    "intro": "Four courses, in this order, on the public Claude Partner Network Learning Path. All free. The path calls itself an introductory foundation and the first step toward unlocking certification. Course durations are not published, so budget by module count rather than by minutes.",
+    "courses": [
+      {
+        "order": 1,
+        "title": "Introduction to agent skills",
+        "summary": "Build, configure, share, distribute and troubleshoot reusable Markdown Skills in Claude Code.",
+        "mapsTo": ["D3"],
+        "why": "Directly feeds Task 3.2: SKILL.md frontmatter, context: fork, allowed-tools, argument-hint, and the project-versus-user scoping decision."
+      },
+      {
+        "order": 2,
+        "title": "Building with the Claude API",
+        "summary": "The broadest single exam-aligned course. Assumes Python and basic JSON.",
+        "mapsTo": ["D1", "D2", "D4"],
+        "why": "Covers tool schemas and results, parallel tools, structured output, evaluation and MCP, which is most of Domains 1, 2 and 4.",
+        "modules": [
+          "Introduction",
+          "Accessing Claude with the API (authentication, API requests, multi-turn chat, system prompts, temperature, streaming)",
+          "Prompt evaluation (dataset generation, model-based and code-based grading)",
+          "Prompt engineering techniques (XML, examples, structured output)",
+          "Tool use with Claude (tool schemas, tool results, parallel tools, web search)",
+          "RAG and Agentic Search (chunking, embeddings, BM25, contextual retrieval)",
+          "Features of Claude (thinking, images, PDFs, citations, caching, code execution)",
+          "Model Context Protocol (clients, servers, resources, prompts)",
+          "Anthropic apps: Claude Code and computer use",
+          "Agents and workflows (parallelization, chaining, routing)",
+          "Final assessment"
+        ]
+      },
+      {
+        "order": 3,
+        "title": "Introduction to Model Context Protocol",
+        "summary": "Build MCP servers and clients from scratch in Python. The three primitives: tools, resources, prompts.",
+        "mapsTo": ["D2"],
+        "why": "Domain 2 is 18% of the exam and turns on knowing when something is a tool versus a resource.",
+        "modules": [
+          "Introduction: welcome, introducing MCP, MCP clients",
+          "Hands-on with MCP servers: project setup, defining tools, Server Inspector",
+          "Connecting with MCP clients: implementing a client, defining and accessing resources, defining prompts, prompts in the client",
+          "Assessment and wrap up"
+        ]
+      },
+      {
+        "order": 4,
+        "title": "Claude Code in Action",
+        "summary": "From short interactive tasks to long, less-supervised Claude Code workflows you can trust.",
+        "mapsTo": ["D3", "D5"],
+        "why": "The closest match to Domain 3 and to the long-session context management in Domain 5.",
+        "modules": [
+          "Steer the Work",
+          "Steering Long Sessions",
+          "Configure Claude",
+          "A CLAUDE.md That Follows",
+          "Verification Skills",
+          "Permission Modes",
+          "Hooks",
+          "Automate Repeat Work",
+          "Routines and Headless",
+          "GitHub Actions and Code Review",
+          "Verify and Share",
+          "Trust It: Verifying Unsupervised Runs",
+          "Plugins",
+          "Course Quiz"
+        ]
+      }
+    ],
+    "notOnPath": [
+      { "title": "Model Context Protocol: Advanced Topics", "note": "Free follow-on. Sampling, notifications, roots, JSON message types, stdio, Streamable HTTP, HTTP state. Useful depth for Domain 2, but not on the path." },
+      { "title": "Building with the Claude Agent SDK", "note": "Not one of the four path cards, yet Domain 1 is 27% of the exam and is almost entirely Agent SDK. Fill this gap from the docs and by building." },
+      { "title": "AI Fluency", "note": "General public Academy material. Not exam-relevant." }
+    ]
+  },
+
+  "studySequence": [
+    "Complete the four path courses in order.",
+    "Read the official exam guide end to end. It is the blueprint and it names the traps.",
+    "Build one Messages API tool loop driven by stop_reason, and one MCP server plus client.",
+    "Configure a real Claude Code project: CLAUDE.md hierarchy, .claude/rules/ with globs, a skill with context: fork, hooks, permissions, one MCP server.",
+    "Close blueprint gaps from the docs and cookbook, domain by domain.",
+    "Finish with timed scenario practice and an error log categorized by domain."
+  ],
+
+  "partnerTiers": {
+    "intro": "The Claude Partner Network Services Track launched 3 June 2026. Certifications count toward the employer's tier, so your pass has organizational value beyond the personal badge. Joining is free; tiered partners get discounted first attempts.",
+    "tiers": [
+      { "name": "Select", "certs": "10+", "customers": "2+ joint production customers in trailing 12 months", "stories": "1+", "extra": "Entry services tier" },
+      { "name": "Preferred", "certs": "100+", "customers": "15+", "stories": "3+", "extra": "Deeper Claude practice" },
+      { "name": "Global Premier", "certs": "1,000+", "customers": "100+ across 3+ regions", "stories": "15+", "extra": "Joint business plan and executive sponsorship" }
+    ]
+  },
+
+  "tensions": {
+    "intro": "Four architectural tensions worth holding in mind. Scenario items are usually asking you to resolve one of them.",
+    "items": [
+      { "t": "Autonomy versus predictability", "b": "An Agent SDK loop handles unknown steps. A fixed workflow is cheaper, more testable and more predictable. Reach for the loop only when the path genuinely varies." },
+      { "t": "More context versus better context", "b": "A very large window does not remove the need for retrieval, trimming, compaction or attention to position. Bigger is not the fix for attention dilution." },
+      { "t": "Schema validity versus semantic correctness", "b": "Structured output guarantees parseability, never factual accuracy or policy compliance. Syntax errors go away; wrong values do not." },
+      { "t": "Determinism versus persuasion", "b": "Hooks and prerequisite gates guarantee. Prompts and few-shot examples persuade. Financial and compliance requirements need the first kind." }
+    ]
+  },
+
+  "distractorPatterns": [
+    "Using an autonomous agent for a deterministic transform.",
+    "Adding infrastructure (a classifier, a routing layer, an ML model) where a text or configuration change fixes the root cause.",
+    "Prompt-based fixes where a deterministic guarantee is required.",
+    "Fixing a downstream component that was working correctly within its assignment.",
+    "A bigger model or a bigger context window for an attention or decomposition problem.",
+    "Invented features that do not exist, such as CLAUDE_HEADLESS, --batch, or .claude/config.json.",
+    "Shifting the burden onto humans instead of fixing the system.",
+    "Self-reported confidence or sentiment used as a proxy for complexity."
+  ],
+
+  "communityCaveats": [
+    "Third-party practice banks are diagnostic material, not exam truth. One widely linked guide still quotes a stale $99 fee against the live $125.",
+    "Claims of exact overlap with live questions are red flags and violate the NDA you accept before the exam begins.",
+    "The public listing does not state multiple-choice versus multiple-response ratios. The official guide does say each item states how many responses to select.",
+    "Course durations are not published anywhere public. Ignore any source that quotes them."
+  ],
+
+  "extraResources": [
+    { "title": "Claude platform docs", "url": "https://platform.claude.com/docs/", "note": "Current API source of truth." },
+    { "title": "Claude Code docs", "url": "https://code.claude.com/docs/", "note": "Current Claude Code source of truth: CLAUDE.md, rules, skills, hooks, CLI flags." },
+    { "title": "Interactive prompt engineering tutorial", "url": "https://github.com/anthropics/prompt-eng-interactive-tutorial", "note": "Nine-chapter hands-on prompt curriculum. Cheapest route to Domain 4 fluency." },
+    { "title": "Anthropic engineering blog", "url": "https://www.anthropic.com/engineering", "note": "Agent patterns, contextual retrieval, context engineering." },
+    { "title": "Pearson VUE OnVUE readiness", "url": "https://pearsonvue.com/us/en/anthropic.html", "note": "Run the system test well before exam day. VPNs, VMs and corporate networks fail." }
+  ]
+}

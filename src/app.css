@@ -1,0 +1,210 @@
+@import 'tailwindcss';
+
+/* Dark mode is driven by a class on <html>, set from the stored preference in
+   progress.svelte.js, so the choice survives a reload and a system change does
+   not override an explicit pick. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ---------------------------------------------------------------- theme
+
+   Warm paper in light, deep slate in dark. The accent is a clay orange that
+   reads as ink rather than as a UI framework default. Every colour used in the
+   app comes from these tokens; nothing hard-codes a hex. */
+
+@theme {
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, system-ui, sans-serif;
+  --font-serif: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+
+  --color-paper: #faf9f7;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f1ed;
+  --color-line: #e3ded6;
+  --color-line-strong: #cdc6ba;
+  --color-ink: #1f1d1a;
+  --color-ink-2: #5f5951;
+  --color-ink-3: #8b8378;
+
+  --color-clay: #c4633f;
+  --color-clay-text: #a84f2e;
+  --color-clay-soft: #f6e9e3;
+
+  --color-ok: #4a7c59;
+  --color-ok-soft: #e6efe8;
+  --color-bad: #b03a3a;
+  --color-bad-soft: #f8e8e6;
+  --color-warn: #a8781f;
+  --color-warn-soft: #f7efdd;
+
+  --radius-card: 0.625rem;
+}
+
+/* Dark palette. Only the tokens change; no component knows which theme is on. */
+:root.dark {
+  --color-paper: #16181c;
+  --color-surface: #1d2025;
+  --color-surface-2: #24282e;
+  --color-line: #2e333a;
+  --color-line-strong: #414852;
+  --color-ink: #e8e6e3;
+  --color-ink-2: #a5a29c;
+  --color-ink-3: #75726d;
+
+  --color-clay: #e08b62;
+  --color-clay-text: #eda57f;
+  --color-clay-soft: #34261f;
+
+  --color-ok: #7bb389;
+  --color-ok-soft: #1f2d23;
+  --color-bad: #e07a72;
+  --color-bad-soft: #33211f;
+  --color-warn: #d8ac57;
+  --color-warn-soft: #302719;
+}
+
+/* ---------------------------------------------------------------- base */
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  body {
+    background: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    margin: 0;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-serif);
+    letter-spacing: -0.01em;
+  }
+  /* Identifiers wrapped by richText(). Inline, quiet, never wraps mid-token. */
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-line);
+    border-radius: 4px;
+    padding: 0.05em 0.35em;
+    white-space: nowrap;
+  }
+  ::selection {
+    background: var(--color-clay-soft);
+  }
+}
+
+/* ---------------------------------------------------------------- components
+
+   Utilities that recur often enough that spelling them out at every call site
+   would obscure the markup. Kept deliberately few. */
+
+@layer components {
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: 0 1px 2px rgb(31 29 26 / 5%), 0 4px 14px rgb(31 29 26 / 5%);
+  }
+  :root.dark .card {
+    box-shadow: 0 1px 2px rgb(0 0 0 / 30%), 0 4px 14px rgb(0 0 0 / 25%);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.5rem 0.95rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--color-line-strong);
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.12s, border-color 0.12s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-surface-2);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-clay);
+    border-color: var(--color-clay);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--color-clay);
+    filter: brightness(1.07);
+  }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--color-ink-2);
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--color-surface-2);
+    color: var(--color-ink);
+  }
+  .btn-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8125rem;
+  }
+
+  .pill {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 9999px;
+    border: 1px solid var(--color-line);
+    background: var(--color-surface-2);
+    color: var(--color-ink-2);
+    font-size: 0.72rem;
+    font-weight: 500;
+    line-height: 1.6;
+    white-space: nowrap;
+  }
+
+  .label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-ink-3);
+  }
+
+  .field {
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--color-line-strong);
+    border-radius: 0.45rem;
+    background: var(--color-surface);
+    color: var(--color-ink);
+    font: inherit;
+    font-size: 0.875rem;
+  }
+
+  .prose-body :where(p) {
+    margin-block: 0.5rem;
+  }
+  .prose-body :where(ul, ol) {
+    margin-block: 0.4rem;
+    padding-inline-start: 1.15rem;
+  }
+  .prose-body :where(li) {
+    margin-block: 0.3rem;
+  }
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

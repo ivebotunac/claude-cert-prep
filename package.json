@@ -1,0 +1,41 @@
+{
+  "name": "ccarf-prep",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline study app for the Claude Certified Architect - Foundations (CCAR-F) certification",
+  "license": "MIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run tests/unit",
+    "test:watch": "vitest",
+    "check": "svelte-check --tsconfig ./jsconfig.json",
+    "content:validate": "python3 scripts/validate.py",
+    "content:rebalance": "python3 scripts/rebalance.py",
+    "content:verify": "python3 scripts/verify_guide.py",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:all": "npm run test:unit && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0",
+    "@sveltejs/vite-plugin-svelte": "^7.3.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.4.0",
+    "jsdom": "^25.0.0",
+    "svelte": "^5.57.0",
+    "svelte-check": "^4.1.0",
+    "tailwindcss": "^4.3.3",
+    "vite": "^8.2.2",
+    "vitest": "^3.0.0"
+  },
+  "dependencies": {
+    "@sqlite.org/sqlite-wasm": "3.53.0-build1"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}

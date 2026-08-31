@@ -1,0 +1,508 @@
+[
+  {
+    "id": "d5b-001",
+    "domain": "D5",
+    "task": "5.1",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "Each master services agreement runs 90 to 130 pages and is sent in a single request against one schema covering 22 fields. Measured against labeled documents, fields whose source text sits in the first 15 pages or the last 10 pages extract at 96% accuracy, while fields whose source text sits in the middle third fall to 71%. Moving a clause from the middle of the file to the end raises that field's accuracy immediately. What is the most effective fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Instruct the model to read the whole agreement carefully and to confirm it has checked every page before returning the extraction record."
+      },
+      {
+        "key": "B",
+        "text": "Split each agreement into its sections, run one extraction pass per section, and merge the per-section results into the final record."
+      },
+      {
+        "key": "C",
+        "text": "Move the extraction to a model with a larger context window so that a 130-page agreement fits with room to spare."
+      },
+      {
+        "key": "D",
+        "text": "Run the same single-pass extraction three times and keep, for each field, the value that appears in at least two of the three runs."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Accuracy tracks position in the input rather than content, which is the lost-in-the-middle effect. Extracting section by section puts every clause in a short input where nothing is buried in the middle.",
+    "why": {
+      "A": "An instruction cannot change where attention falls in a long input. The gap is positional, not a matter of effort.",
+      "C": "The document already fits. A larger window does not improve attention quality within the input it holds.",
+      "D": "Every run carries the same positional weakness, so consensus mostly reproduces the same misses at three times the cost."
+    }
+  },
+  {
+    "id": "d5b-002",
+    "domain": "D5",
+    "task": "5.1",
+    "scenario": "S2",
+    "type": "single",
+    "source": "derived",
+    "stem": "During a long refactoring session a developer runs the full test suite through Bash after each change. Each run appends about 5,000 lines of passing-test output plus a 20-line failure summary. After nine runs, instrumentation shows test output occupies 74% of session context, and Claude has begun re-reading files it already read and reintroducing a bug it had already fixed. What is the most effective fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run /compact after every test run so the accumulated output is compressed before the next run appends more."
+      },
+      {
+        "key": "B",
+        "text": "Start a fresh session after every third test run and paste in a written summary of the refactoring work completed so far."
+      },
+      {
+        "key": "C",
+        "text": "Move the session to a model with a larger context window so that nine full test runs and the code under change fit together."
+      },
+      {
+        "key": "D",
+        "text": "Change the test command to emit only failing tests and the pass and fail counts, so passing output never enters context."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Trim verbose tool output before it accumulates. Only the failures and the counts are ever reasoned about, so only those need to enter context.",
+    "why": {
+      "A": "Compaction is cleanup after the fact. The same flood returns on the next run, and each pass also compresses the design reasoning worth keeping.",
+      "B": "Discards working context repeatedly and moves effort onto the developer while the volume of appended output is unchanged.",
+      "C": "Buys a few more runs and leaves 74% of a bigger window filled with output nobody reads."
+    }
+  },
+  {
+    "id": "d5b-003",
+    "domain": "D5",
+    "task": "5.1",
+    "scenario": "S2",
+    "type": "single",
+    "source": "derived",
+    "stem": "At the start of a four-hour session the developer states three constraints that hold for this change only: the service stays on Node 18 until December's runtime upgrade lands, the public signature of OrderService.submit does not change before the client migration, and this release's response payload stays under 40 KB. Two compaction passes later the retained summary reads \"user wants the order service modernized and faster\". Claude then proposes an implementation that changes the submit signature and calls a Node 20 API. What is the most effective fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Keep the three constraints in a facts block that is restated at the top of every request, outside the summarized history."
+      },
+      {
+        "key": "B",
+        "text": "Record the three constraints in the project CLAUDE.md so that every session opened in this repository loads them automatically."
+      },
+      {
+        "key": "C",
+        "text": "Ask the developer to restate the constraints whenever Claude produces work that appears to have drifted away from them."
+      },
+      {
+        "key": "D",
+        "text": "Delay compaction until the context window is nearly full, so that fewer compaction passes run over the same statements."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Versions, signatures and stated limits are exactly what progressive summarization blurs. Holding them in a persistent block outside the summarized stream keeps them verbatim in every request.",
+    "why": {
+      "B": "CLAUDE.md carries durable project-wide standards. All three constraints expire with this change and would go stale in every teammate's session.",
+      "C": "Shifts the burden onto the developer and only catches drift after it has already produced work that has to be redone.",
+      "D": "The constraints still sit inside the summarized stream, so the loss is postponed rather than prevented."
+    }
+  },
+  {
+    "id": "d5b-004",
+    "domain": "D5",
+    "task": "5.2",
+    "scenario": "S1",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "Your agent decides whether to escalate by rating its own confidence in a resolution and calling escalate_to_human below 0.7. An audit of 240 escalations finds 96 rated below 0.7 on returns and address changes the agent had both the policy and the tools to complete, every one of which a human closed with no new information. Another 31 contacts rated above 0.9 were resolved autonomously on requests the written policy does not address, and all 31 had to be reversed. The score tracks how unusual the customer's phrasing is, not whether the case is within reach. Which two changes should you make? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Recalibrate the threshold against the audited 240 contacts, moving it to the score that best separates the reversed cases."
+      },
+      {
+        "key": "B",
+        "text": "Remove the score gate and escalate on stated conditions: an explicit request for a person, a policy gap, or no path forward."
+      },
+      {
+        "key": "C",
+        "text": "Have a second model score the agent's proposed reply and escalate whenever the two scores disagree by more than a set margin."
+      },
+      {
+        "key": "D",
+        "text": "Add a few-shot pair to the system prompt, one contact escalated and one resolved, each naming the condition that decided it."
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "explanation": "A self-rated score is not a proxy for case complexity. Escalation belongs on stated conditions, and worked examples are what make those conditions hold on wording the list does not obviously cover.",
+    "why": {
+      "A": "The audit shows the score is unrelated to whether a case is within reach, so no cut point on it separates the two populations.",
+      "C": "Two self-reports are no better grounded than one. Their disagreement measures phrasing, not policy coverage or tool reach."
+    }
+  },
+  {
+    "id": "d5b-005",
+    "domain": "D5",
+    "task": "5.2",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "A customer reports that a refund for an in-store purchase never arrived. That order lives in the point of sale system, which none of the agent's tools reach and which is being retired next year, so it will not be integrated. Logs show the agent calling lookup_order nine times with reformatted identifiers over four minutes, then replying \"I could not find that order, please check the number and try again\". Contacts of this shape are 7% of volume and 90% of them come back the next day. Which change addresses the root cause?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add inability to make meaningful progress to the escalation criteria, so an agent that has exhausted its tools escalates instead of looping."
+      },
+      {
+        "key": "B",
+        "text": "Cap lookup_order at three attempts per contact, after which the agent tells the customer the order could not be located in the system."
+      },
+      {
+        "key": "C",
+        "text": "Add a tool that reaches the point of sale system, so the agent can look up in-store purchases without escalating at all."
+      },
+      {
+        "key": "D",
+        "text": "Escalate any contact whose message mentions a refund that has not arrived, since those contacts have the highest repeat rate."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "The three escalation triggers are an explicit request for a human, a policy gap, and inability to make meaningful progress. This is the third one, and the criteria never name it.",
+    "why": {
+      "B": "Stops the wasted calls but still ends the contact unresolved, which is exactly what brings the customer back the next day.",
+      "C": "The point of sale system is not going to be integrated, and even if it were, the criteria would still send the next out-of-reach request into the same loop.",
+      "D": "Routes on topic rather than on whether the agent can progress, escalating the many such contacts it could resolve itself."
+    }
+  },
+  {
+    "id": "d5b-006",
+    "domain": "D5",
+    "task": "5.3",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "A subagent that reads issue history through an MCP server hits a repository the service account cannot access, and reports \"tool call failed\". The coordinator re-delegates four times over six minutes and then tells the engineer \"issue history unavailable\". The same response shape is returned for genuine 20-second gateway timeouts, which do clear on a second attempt. What should the subagent return for the access failure?",
+    "options": [
+      {
+        "key": "A",
+        "text": "One generic failure once the retries are exhausted, so the coordinator has a single consistent failure shape to handle everywhere."
+      },
+      {
+        "key": "B",
+        "text": "The failure only after five attempts with exponential backoff, so any transient condition has the maximum chance to clear first."
+      },
+      {
+        "key": "C",
+        "text": "An empty issue list, so the run continues and the missing history shows up as a gap in the final answer to the engineer."
+      },
+      {
+        "key": "D",
+        "text": "A structured error carrying errorCategory permission, isRetryable false, and the name of the repository it could not reach."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "A category plus a retryable flag lets the coordinator abandon a permission wall on the first attempt and surface the access request, while still retrying real timeouts.",
+    "why": {
+      "A": "Uniform errors are the defect. The coordinator cannot tell a permission wall from a timeout, so it retries both identically.",
+      "B": "Spends even longer on a failure that can never clear. Retry policy is not the missing information.",
+      "C": "Reports failure as success, so the engineer is told there is no issue history rather than that it could not be read."
+    }
+  },
+  {
+    "id": "d5b-007",
+    "domain": "D5",
+    "task": "5.3",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "A nightly coordinator fans 5,000 invoices across eight extraction subagents. A subagent that cannot open a document raises, and the coordinator's handler aborts the run and discards everything extracted so far. Last night one password-protected PDF at invoice 4,300 ended a run that had already completed 4,299 documents, and the rerun started from zero. About 12 such files arrive a night and none can be opened without a password only the sender can supply. What should change?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the subagent retry an unopenable document with a longer timeout and a different PDF reader before it reports anything."
+      },
+      {
+        "key": "B",
+        "text": "Have the subagent return an empty extraction for an unopenable document so the batch reaches the end without aborting."
+      },
+      {
+        "key": "C",
+        "text": "Have the subagent return a structured failure naming the file and the reason, and let the coordinator finish the batch."
+      },
+      {
+        "key": "D",
+        "text": "Keep the abort but checkpoint every 500 invoices, so a rerun resumes from the last checkpoint rather than from zero."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "One document that cannot be read is not a reason to discard 4,299 that were. The subagent reports the failure as data, the coordinator completes the batch, and the unread files surface as a named exception list.",
+    "why": {
+      "A": "A password wall never clears, so retrying spends time on a failure that is permanent by construction.",
+      "B": "Reports a failure as a clean result, which is how an unread invoice reaches finance as a complete record.",
+      "D": "Makes an abort cheaper without making it right. One unreadable file still ends the night for every invoice after it."
+    }
+  },
+  {
+    "id": "d5b-008",
+    "domain": "D5",
+    "task": "5.4",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your exploration agent is instructed to write a findings file at the end of each session, and the next session reads only that file. Sessions run about three hours. Checking one file against its transcript, findings from the first hour are recorded accurately with class and file names, while findings from the third hour appear as generic prose about \"the usual repository pattern\", and two classes the agent read and described correctly at hour two are missing altogether. What should change?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the agent append each finding to the file as it is discovered, so nothing depends on recalling it three hours later."
+      },
+      {
+        "key": "B",
+        "text": "Have the agent re-read the files it explored during the session before writing the findings file, so late entries are grounded."
+      },
+      {
+        "key": "C",
+        "text": "Cap sessions at 90 minutes, so the findings file is always written while the session context is still reliable."
+      },
+      {
+        "key": "D",
+        "text": "Have a second agent read the finished session transcript and write the findings file from it instead."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "The findings file is being written by the degraded context it is meant to outlast. Recording each finding when it is fresh removes the dependency on late-session recall entirely.",
+    "why": {
+      "B": "Repeats the whole exploration to recover what was already known, and the agent writing the file is still the degraded one.",
+      "C": "Trades away continuity to shorten the window, and the same loss returns on any exploration too large for 90 minutes.",
+      "D": "A three-hour transcript is a long input with its own position effects, and it costs a second full pass to read."
+    }
+  },
+  {
+    "id": "d5b-009",
+    "domain": "D5",
+    "task": "5.4",
+    "scenario": "S2",
+    "type": "single",
+    "source": "derived",
+    "stem": "A feature spans four working days and a new session each morning, with each day's work committed and the branch moved on before the next session opens. Each session re-explores the same six files, and on day three Claude proposes the adapter approach the team rejected on day one in favour of middleware, because nothing recorded that decision. The engineer spends the first 20 minutes of every session re-explaining where the work stands. What is the most effective fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Resume the previous day's session each morning with --resume, so the whole prior conversation and its file reads are available again."
+      },
+      {
+        "key": "B",
+        "text": "Record the middleware decision and the six file paths in the project CLAUDE.md so that every session loads them."
+      },
+      {
+        "key": "C",
+        "text": "Keep a scratchpad file of decisions, state and open questions, read at each session start and updated as work lands."
+      },
+      {
+        "key": "D",
+        "text": "Have Claude read the branch diff at the start of each session to reconstruct what has been built over the previous three days."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "A scratchpad file survives both context boundaries and session ends, carrying the decisions and their rationale that neither a stale transcript nor a diff preserves.",
+    "why": {
+      "A": "The code moved overnight, so the resumed session carries stale reads. A fresh session with a structured summary is the more reliable choice.",
+      "B": "CLAUDE.md is for durable project standards. The moving state of one feature would go stale there and would load for every teammate.",
+      "D": "A diff shows what changed but not why, so the rejected adapter approach never appears in it."
+    }
+  },
+  {
+    "id": "d5b-010",
+    "domain": "D5",
+    "task": "5.5",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "Human review was removed three months ago on the strength of a 98.6% document-level acceptance rate. Finance now reports that payment_terms is wrong on about 1 document in 9, always where the terms sit in a footer rather than the header block, and the model reports no lower confidence on those documents than on any others. The other 21 fields remain above 99%. Volume is 12,000 documents a day. What is the right response?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Restore human review of every extraction until the 98.6% document-level acceptance rate has been re-established under review."
+      },
+      {
+        "key": "B",
+        "text": "Reintroduce document-level confidence routing so that the least confident extractions go back into the review queue."
+      },
+      {
+        "key": "C",
+        "text": "Re-run the last three months of documents and treat any field whose value changes on the second pass as an error to be corrected."
+      },
+      {
+        "key": "D",
+        "text": "Route payment_terms alone to human review, and report extraction accuracy per field rather than per document from now on."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "A document-level aggregate hid a single bad field. The proportionate response is review scoped to the failing segment plus the metric that would have surfaced it.",
+    "why": {
+      "A": "Over-corrects by reinstating review of 21 healthy fields, at 12,000 documents a day, to fix one.",
+      "B": "These extractions are confidently wrong, so confidence is not the signal that separates them from the healthy ones.",
+      "C": "A second pass repeats the same systematic footer error, so agreement between the two passes proves nothing."
+    }
+  },
+  {
+    "id": "d5b-011",
+    "domain": "D5",
+    "task": "5.2",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your system prompt tells the agent to acknowledge frustration and offer to resolve when the case is inside policy, which cut needless escalations by a third. Transcript review now finds a second pattern in 14% of contacts: the customer complains about a late delivery, the agent offers to reissue the order, the customer answers \"no, I want to speak to a manager\", and the agent offers again, and once more after that, before escalating four turns later. These contacts score lowest on satisfaction in the whole set. What should the system prompt add?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Escalate on the first message that expresses dissatisfaction, since these contacts already score lowest on satisfaction."
+      },
+      {
+        "key": "B",
+        "text": "Escalate as soon as the customer repeats the request for a person, after one offer to resolve and with no further attempt."
+      },
+      {
+        "key": "C",
+        "text": "Offer once and, if the customer declines, restate the offer with the goodwill credit the policy allows before escalating."
+      },
+      {
+        "key": "D",
+        "text": "Cap the exchange at four turns, after which an unresolved contact is escalated whatever the customer has asked for."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Offering once when the case is resolvable is right. Once the customer states the preference a second time it is an explicit request for a human, and the guidance is to honour it rather than to try again.",
+    "why": {
+      "A": "Routes on sentiment, which is what the existing instruction fixed. It would give back the third of escalations already saved.",
+      "C": "Still a second attempt, now with money attached, against a customer who has already said what they want.",
+      "D": "Turn count is not the signal. The customer said so at turn two, and a four-turn cap leaves three of those turns in place."
+    }
+  },
+  {
+    "id": "d5b-012",
+    "domain": "D5",
+    "task": "5.5",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your extractor emits a per-document confidence and the review threshold sits at 0.85 because that number was picked at design time. A newly labeled validation set of 1,500 documents shows the error rate is 14% below 0.80, 7% from 0.80 to 0.90, 2% from 0.90 to 0.95 and 0.4% above 0.95. In production, documents below 0.90 are 15% of volume and those between 0.90 and 0.95 a further 22%. Review sees 6% of volume today and has capacity for 15%. How should the threshold be set?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Raise it to 0.95 so that every band with a measurable error rate reaches a human reviewer before release."
+      },
+      {
+        "key": "B",
+        "text": "Leave it at 0.85 and spend the spare capacity on a random sample drawn from everything above the threshold."
+      },
+      {
+        "key": "C",
+        "text": "Set it at 0.90 using the labeled set, which fills the available capacity, 15% of volume, with the two highest-error bands."
+      },
+      {
+        "key": "D",
+        "text": "Ask the model to report its confidence more conservatively so the scores line up with the observed error rates."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "The labeled validation set is what turns an arbitrary cut into a calibrated one: choose the cut whose routed volume matches reviewer capacity and captures the bands where the errors actually are.",
+    "why": {
+      "A": "Routes 37% of volume against capacity for 15%, and spends much of it on a band with a 2% error rate.",
+      "B": "Leaves the measured 7% band partly unreviewed while sampling a population the labels already show to be clean.",
+      "D": "Self-reported confidence is not calibrated by instruction. The scores already rank risk usefully; the fix belongs in the threshold."
+    }
+  },
+  {
+    "id": "d5b-013",
+    "domain": "D5",
+    "task": "5.6",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "Supplier records are assembled from several documents: an original contract, later amendments, and signed rate cards. The merge step flags a conflict whenever two documents give different values for one field and routes the record to human review. Reviewers report that 80% of these are a 2022 contract saying Net 30 against a 2024 amendment saying Net 45, which is no conflict at all. 600 records a week queue this way. What is the smallest change that fixes it?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the merge step keep whichever value came from the document with the higher extraction confidence and discard the other."
+      },
+      {
+        "key": "B",
+        "text": "Carry each document's effective date in the extracted record, so the merge reads a later value as superseding rather than conflicting."
+      },
+      {
+        "key": "C",
+        "text": "Rank the document types so that an amendment always beats a contract and a signed rate card always beats an amendment when the two disagree."
+      },
+      {
+        "key": "D",
+        "text": "Keep flagging both values for reviewers, since a person can see at a glance which of the two documents is the newer one."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Without dates in the structured output a difference over time is indistinguishable from a disagreement. Carrying the date makes supersession computable and leaves only real conflicts for review.",
+    "why": {
+      "A": "Confidence says nothing about which document is current, so it would pick the superseded 2022 contract about as often as not.",
+      "C": "Hard-codes a hierarchy that still cannot order two amendments against each other, which is the same failure in a new form.",
+      "D": "Shifts onto humans, 600 times a week, a distinction the pipeline can make deterministically once the dates are present."
+    }
+  },
+  {
+    "id": "d5b-014",
+    "domain": "D5",
+    "task": "5.6",
+    "scenario": "S3",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "A client challenges your market report. It presents \"68% of enterprises have adopted the practice\" as an established finding, when the underlying source is a vendor survey of 140 self-selected respondents. Elsewhere it states a contested adoption figure in the same confident voice as a figure three independent studies agree on. The analysis subagent recorded the sample size and the vendor's own framing, but none of it survived synthesis. Which two changes address this? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the synthesis subagent discard any finding whose only source is a vendor survey, on the grounds that a vendor's own survey is not independent evidence."
+      },
+      {
+        "key": "B",
+        "text": "Require the sample size, sampling method and the source's own framing to travel with each claim through synthesis and into the report."
+      },
+      {
+        "key": "C",
+        "text": "Instruct the synthesis subagent to write more cautiously throughout and to hedge every figure it is not fully certain about."
+      },
+      {
+        "key": "D",
+        "text": "Structure the report with separate sections for well-established and contested findings, keeping each source's original characterization."
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "explanation": "Methodological context has to be a structured field that survives the compression step, and the report has to show the reader which findings are settled and which are disputed.",
+    "why": {
+      "A": "Throws away usable evidence. The defect is unlabeled provenance, not the presence of a vendor source.",
+      "C": "Uniform hedging destroys the very distinction it is meant to convey, and what is missing is evidence quality rather than tone."
+    }
+  }
+]

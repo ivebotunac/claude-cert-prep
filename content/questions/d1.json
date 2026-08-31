@@ -1,0 +1,1628 @@
+[
+  {
+    "id": "d1-001",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your support agent's loop terminates as soon as the assistant response contains any text block. In production this cuts off multi-step resolutions midway, because Claude often narrates what it is about to do in the same turn that it requests a tool. What is the correct termination condition?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Continue while stop_reason is \"tool_use\" and terminate when stop_reason is \"end_turn\"."
+      },
+      {
+        "key": "B",
+        "text": "Terminate when the response contains a text block and no further user input is pending."
+      },
+      {
+        "key": "C",
+        "text": "Terminate after a fixed maximum of 10 iterations, which covers the vast majority of observed resolutions."
+      },
+      {
+        "key": "D",
+        "text": "Ask the model to append a sentinel token such as [DONE] and terminate when the token appears."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "stop_reason is the API's explicit signal about whether the model wants a tool executed or has finished its turn. A single turn can legitimately contain both text and tool_use blocks.",
+    "why": {
+      "B": "Text and tool_use coexist in one turn, which is exactly why the loop is cutting off early.",
+      "C": "An iteration cap is a safety net against runaway loops, not a control-flow decision.",
+      "D": "Parsing natural language signals for termination is a named anti-pattern when a structured field already carries the answer."
+    }
+  },
+  {
+    "id": "d1-002",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your agentic loop executes each requested tool correctly but discards the tool output after logging it, then sends the next request with the original conversation history. The agent repeatedly calls the same tool with the same arguments. What is the defect?",
+    "options": [
+      {
+        "key": "A",
+        "text": "tool_choice is set to \"any\", which forces a tool call on every iteration of the loop."
+      },
+      {
+        "key": "B",
+        "text": "Tool results are never appended, so each iteration re-plans from identical state."
+      },
+      {
+        "key": "C",
+        "text": "The tools are not idempotent, so they need a deduplication key before use in an agentic loop."
+      },
+      {
+        "key": "D",
+        "text": "max_tokens is too low, truncating the model's plan before it can move past the first tool call."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "The loop is: request, inspect stop_reason, execute tools, append the results to the conversation, request again. Skipping the append means the model never learns the outcome and re-issues the same call.",
+    "why": {
+      "A": "\"any\" forces some tool call but does not force the same call with the same arguments.",
+      "C": "Idempotency limits the damage from a repeat call but does nothing to stop the repetition.",
+      "D": "Truncation shows up as incomplete output, not as identical calls repeated with the same arguments."
+    }
+  },
+  {
+    "id": "d1-003",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S4",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "You are reviewing a colleague's agentic loop implementation for a codebase exploration agent. Which two implementation choices are anti-patterns you should flag? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Using a regex over the assistant's text to detect \"analysis complete\" as the exit condition."
+      },
+      {
+        "key": "B",
+        "text": "Appending every tool_result block to the messages array before issuing the next request."
+      },
+      {
+        "key": "C",
+        "text": "Using a hard cap of 25 iterations as the primary mechanism for deciding the task is finished."
+      },
+      {
+        "key": "D",
+        "text": "Branching on stop_reason to decide whether to execute tools or return the final answer."
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "explanation": "Parsing natural language for termination signals and relying on an arbitrary iteration cap as the primary stopping mechanism are both explicitly named anti-patterns. stop_reason is the intended control signal.",
+    "why": {
+      "B": "Appending results is required behaviour, and it is what lets the model act on what it learned.",
+      "D": "Branching on stop_reason is the intended control flow, not an anti-pattern."
+    }
+  },
+  {
+    "id": "d1-004",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "A teammate argues that a hard-coded sequence (always search, then always analyze, then always synthesize) is safer than letting Claude decide which tool to call next. For which situation is their fixed sequence genuinely the better design?",
+    "options": [
+      {
+        "key": "A",
+        "text": "When tool outputs are large and each step's results consume a lot of the context budget."
+      },
+      {
+        "key": "B",
+        "text": "When more than five tools are registered and selection accuracy starts to degrade."
+      },
+      {
+        "key": "C",
+        "text": "When every input needs the same steps in the same order, leaving nothing to decide."
+      },
+      {
+        "key": "D",
+        "text": "When inputs vary widely and each one needs a different investigative path to resolve."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Model-driven decision-making earns its cost when the path genuinely varies. If every input needs the same steps in the same order, a deterministic pipeline is simpler, cheaper and more predictable.",
+    "why": {
+      "A": "Large outputs are a context management problem, solved by trimming results, not by fixing tool order.",
+      "B": "Too many tools is a scoping problem, solved by restricting each agent's tool set.",
+      "D": "Varied investigative paths are exactly where model-driven selection earns its cost."
+    }
+  },
+  {
+    "id": "d1-005",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "During a resolution, Claude returns stop_reason \"tool_use\" with two tool_use blocks: lookup_order and get_customer. Your loop executes lookup_order, appends that single tool_result and sends the next request. What goes wrong?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Nothing breaks, because the model simply re-requests get_customer on the following iteration."
+      },
+      {
+        "key": "B",
+        "text": "The unexecuted block is dropped and the next response comes back with stop_reason \"end_turn\"."
+      },
+      {
+        "key": "C",
+        "text": "The SDK retries the skipped tool automatically once the current turn has been committed."
+      },
+      {
+        "key": "D",
+        "text": "The request is rejected: every tool_use block needs a matching tool_result in the next message."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "The API requires one tool_result for every tool_use block in the preceding assistant turn, grouped into a single user message. A call you chose not to execute still needs a tool_result, typically one reporting an error.",
+    "why": {
+      "A": "The conversation never gets that far; the request carrying the missing tool_result is invalid.",
+      "B": "stop_reason describes a response you already received; omitting a result does not rewrite that turn.",
+      "C": "There is no automatic retry. Returning a result for every requested call is the caller's job."
+    }
+  },
+  {
+    "id": "d1-006",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "An extraction agent is meant to make exactly one tool call per document and stop. Your implementation loops until stop_reason is \"end_turn\", which costs one extra round trip because the model adds a closing summary, and on about 3% of documents the model answers in prose without calling the extraction tool at all. What is the appropriate adjustment?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Drop the loop: force the extraction tool and read the tool_use block from the first response."
+      },
+      {
+        "key": "B",
+        "text": "Keep the loop but exit as soon as the first tool_use block appears, discarding the rest of the turn."
+      },
+      {
+        "key": "C",
+        "text": "Add \"do not summarize after extracting\" to the system prompt and leave the loop in place."
+      },
+      {
+        "key": "D",
+        "text": "Set max_tokens just below the point at which the closing summary would be generated."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Not every task needs an agentic loop. When the goal is one structured output, forcing the tool and reading the tool_use block is simpler, cheaper and deterministic.",
+    "why": {
+      "B": "Exiting early still leaves the 3% of documents where no tool call is ever made, because nothing obliges the model to call the tool.",
+      "C": "Prompt pleading applied to a structural problem, with a residual failure rate either way.",
+      "D": "Truncating output to control flow is fragile and can cut off the tool call itself."
+    }
+  },
+  {
+    "id": "d1-007",
+    "domain": "D1",
+    "task": "1.1",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your support agent routes with a hand-written decision tree of 40 branches. Last month 22% of tickets fell through to the default branch, and every new request shape needs another branch added. You are considering a stop_reason driven loop where Claude selects the next tool itself. What does that change actually buy you?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Tool failures are handled by the loop itself, so the branches no longer need error paths."
+      },
+      {
+        "key": "B",
+        "text": "The model picks the next tool from the conversation itself, so novel request shapes need no new branch."
+      },
+      {
+        "key": "C",
+        "text": "The loop is deterministic, so an identical ticket follows the same sequence of tool calls, which makes regressions easy to spot."
+      },
+      {
+        "key": "D",
+        "text": "Fewer tokens per ticket, because the tree's branch conditions no longer travel in the prompt."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "A decision tree only covers the paths someone anticipated, which is what a 22% default rate measures. Model-driven selection reasons from the actual conversation, so request shapes nobody enumerated still get handled.",
+    "why": {
+      "A": "The loop still needs explicit error handling; stop_reason says nothing about a failed tool call.",
+      "C": "Determinism is what you give up here, not what you gain; the tree was the deterministic option.",
+      "D": "Model-driven loops generally cost more tokens per ticket, not fewer. Adaptability is what you buy."
+    }
+  },
+  {
+    "id": "d1-008",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your research system currently lets the document analysis subagent call the web search subagent directly when it needs a missing source. Debugging a bad report is now very hard: you cannot reconstruct which agent triggered which search, and failures surface in inconsistent shapes. What architectural change addresses this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Merge the document analysis and web search subagents into one agent holding both tool sets."
+      },
+      {
+        "key": "B",
+        "text": "Require every subagent to attach a correlation ID to each call it makes to another subagent."
+      },
+      {
+        "key": "C",
+        "text": "Route every subagent call through the coordinator, which owns delegation, errors and routing."
+      },
+      {
+        "key": "D",
+        "text": "Add verbose logging inside each subagent so the call graph can be reconstructed afterwards."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Hub-and-spoke exists precisely for observability, consistent error handling and controlled information flow. Peer-to-peer subagent calls give all three of those up.",
+    "why": {
+      "A": "Merging specialists broadens tool access and invites cross-specialization misuse.",
+      "B": "Correlation IDs improve tracing but leave the uncontrolled topology exactly as it is.",
+      "D": "Logging documents the mess rather than fixing it, and it gives no consistent error handling."
+    }
+  },
+  {
+    "id": "d1-009",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Every query, however simple, runs through the full pipeline: web search, document analysis, synthesis, report generation. A user asking \"what is the current EU AI Act enforcement date\" waits 90 seconds for a four-agent pipeline. What is the correct coordinator design?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Add a caching layer in front of the pipeline for frequently asked factual questions."
+      },
+      {
+        "key": "B",
+        "text": "Run all four subagents in parallel so the query costs one stage of latency instead of four."
+      },
+      {
+        "key": "C",
+        "text": "Move simple factual queries to a separate lightweight service outside the agent system."
+      },
+      {
+        "key": "D",
+        "text": "Have the coordinator analyze what the query needs and invoke only those subagents."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Deciding which subagents a query actually needs is a core coordinator responsibility. Always running the full pipeline wastes latency and tokens on work the query does not require.",
+    "why": {
+      "A": "Caching helps only repeat questions, and does nothing the first time one is asked.",
+      "B": "Synthesis and report generation consume search and analysis output, so they cannot run alongside them.",
+      "C": "Duplicates infrastructure to avoid making the coordinator do its job."
+    }
+  },
+  {
+    "id": "d1-010",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Three search subagents run in parallel on \"renewable energy storage economics\". Reviewing their outputs, you find roughly 60% of the retrieved sources are identical across the three. What is the most direct fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Have the coordinator assign each subagent distinct subtopics or source types."
+      },
+      {
+        "key": "B",
+        "text": "Deduplicate the aggregated results by URL before they are passed to the synthesis subagent."
+      },
+      {
+        "key": "C",
+        "text": "Reduce to a single search subagent, since the parallelism is producing no extra coverage."
+      },
+      {
+        "key": "D",
+        "text": "Raise each subagent's result limit so the overlapping portion becomes proportionally smaller."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Duplication across parallel subagents is a decomposition problem. Partitioning scope, by subtopic or source type, is what makes the parallelism produce additional coverage rather than three copies of the same search.",
+    "why": {
+      "B": "Deduplication hides the waste but you still paid for three overlapping searches and gained no coverage.",
+      "C": "Abandons parallelism instead of fixing the assignment.",
+      "D": "More results per agent multiplies cost while the overlap persists."
+    }
+  },
+  {
+    "id": "d1-011",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "The synthesis subagent produces a report that reads well but leaves an entire requested dimension of the topic thin. The coordinator currently accepts synthesis output and finishes. Which coordinator behaviour would catch this class of problem?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Running synthesis twice on the same findings and merging the two drafts into one report."
+      },
+      {
+        "key": "B",
+        "text": "Evaluating synthesis output for gaps, re-delegating targeted queries, then re-running synthesis."
+      },
+      {
+        "key": "C",
+        "text": "Instructing the synthesis agent to list, at the end of each report, the areas it felt were thin."
+      },
+      {
+        "key": "D",
+        "text": "Requiring each search subagent to return more sources per subtopic, so synthesis has more to work from."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Coverage evaluation and re-delegation belong to the coordinator, which is the only component with the full picture of what was requested versus what came back.",
+    "why": {
+      "A": "Two syntheses of the same inputs reproduce the same gaps.",
+      "C": "Useful signal, but the synthesis agent sees only what it was given, so it cannot know what was never retrieved.",
+      "D": "More sources on the same subtopics does not fill a dimension nobody searched for."
+    }
+  },
+  {
+    "id": "d1-012",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "A colleague proposes that subagents share the coordinator's conversation history automatically so they always have full context. What is the strongest technical objection?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Sharing history would serialize the subagents, since each waits for the current history snapshot."
+      },
+      {
+        "key": "B",
+        "text": "Subagents cannot reason over text produced by another agent, so the shared history would be unusable."
+      },
+      {
+        "key": "C",
+        "text": "Isolation is deliberate, and inherited history would crowd out each specialist's context budget."
+      },
+      {
+        "key": "D",
+        "text": "Inherited history would let each subagent call the others' tools, breaking hub-and-spoke routing."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Context isolation is the feature, not a limitation. Each subagent gets a clean, purpose-built prompt containing exactly what it needs, which is what keeps specialists focused and their context budgets usable.",
+    "why": {
+      "A": "What a prompt contains has nothing to do with whether invocations can run at the same time.",
+      "B": "Subagents routinely reason over other agents' findings, when those findings are passed to them explicitly.",
+      "D": "Tool access comes from each AgentDefinition, not from what is in a prompt; shared history grants no tools."
+    }
+  },
+  {
+    "id": "d1-013",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "Which two responsibilities belong to the coordinator in a hub-and-spoke multi-agent research system? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Rewriting each subagent's system prompt at runtime based on the previous result."
+      },
+      {
+        "key": "B",
+        "text": "Decomposing the topic into subtasks and deciding which subagents each one needs."
+      },
+      {
+        "key": "C",
+        "text": "Executing the web searches itself so it can guarantee the quality and phrasing of every query."
+      },
+      {
+        "key": "D",
+        "text": "Aggregating subagent results and handling errors the subagents could not resolve locally."
+      }
+    ],
+    "correct": [
+      "B",
+      "D"
+    ],
+    "explanation": "Task decomposition, delegation, result aggregation and error handling are coordinator responsibilities. Execution belongs to the specialists.",
+    "why": {
+      "A": "Runtime prompt rewriting is not part of the pattern; the coordinator passes context and criteria.",
+      "C": "If the coordinator does the searching, there is no reason for a search subagent to exist."
+    }
+  },
+  {
+    "id": "d1-014",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your support system runs an identity subagent, an order subagent and a billing subagent. On a duplicate-charge ticket the order subagent reports the order refunded on 3 March, while the billing subagent reports the charge still open. The agent's reply repeats both statements to the customer. What should you change?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Letting the billing subagent query the order subagent directly to settle the discrepancy."
+      },
+      {
+        "key": "B",
+        "text": "Instructing each subagent to double-check its own findings before it returns them."
+      },
+      {
+        "key": "C",
+        "text": "Escalating to a human whenever two subagents disagree about the state of an account."
+      },
+      {
+        "key": "D",
+        "text": "Aggregating the two reports at the coordinator and reconciling them before replying."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Result aggregation, conflict resolution and routing one coherent answer belong to the coordinator. It is the only component that sees both reports.",
+    "why": {
+      "A": "Peer-to-peer calls give up the observability and consistent error handling that hub-and-spoke exists for.",
+      "B": "Each subagent is right about its own system; self-checking cannot reveal the other one's answer.",
+      "C": "A conflict the coordinator can resolve from two reports does not need a human, and blanket escalation destroys first-contact resolution."
+    }
+  },
+  {
+    "id": "d1-015",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your coordinator's prompt clearly instructs it to delegate document analysis to a subagent, but at runtime it always performs the analysis itself. The AgentDefinition for the analysis subagent is correctly registered. What should you check first?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Whether \"Task\" is in the coordinator's allowedTools; without it it cannot spawn a subagent."
+      },
+      {
+        "key": "B",
+        "text": "Whether the subagent's system prompt is detailed enough for the coordinator to prefer it."
+      },
+      {
+        "key": "C",
+        "text": "Whether the coordinator's model tier is one that supports delegation to another agent."
+      },
+      {
+        "key": "D",
+        "text": "Whether fork_session is enabled, on the assumption that each subagent runs in a forked session."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Task is the mechanism for spawning subagents. If it is absent from allowedTools the coordinator has no way to delegate, so it does the work itself regardless of what the prompt says.",
+    "why": {
+      "B": "Subagent selection is driven by the description, and nothing can be selected without Task.",
+      "C": "Delegation is not gated on model tier.",
+      "D": "fork_session branches a conversation; it has nothing to do with spawning subagents."
+    }
+  },
+  {
+    "id": "d1-016",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "The synthesis subagent produces reports that contradict the document analysis findings and cite sources that were never retrieved. The coordinator invokes it with the prompt \"Synthesize the research findings into a report.\" What is the root cause?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The coordinator invokes synthesis before the document analysis subagent has finished."
+      },
+      {
+        "key": "B",
+        "text": "The subagent is given no findings, and nothing is inherited, so it invents them."
+      },
+      {
+        "key": "C",
+        "text": "The synthesis subagent's temperature is set too high, which makes its output unreliable."
+      },
+      {
+        "key": "D",
+        "text": "The analysis subagent writes its findings to a scratchpad file the synthesis subagent cannot read."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "\"Synthesize the research findings\" refers to findings the subagent has never seen. With no inherited context and nothing passed in, the only way to produce a report is to invent one.",
+    "why": {
+      "A": "Even perfect ordering does not help when the results are never passed along.",
+      "C": "Temperature does not explain citing sources that appear nowhere in a prompt containing no sources.",
+      "D": "There is no implicit shared store; the deficiency is in the prompt, not in a file path."
+    }
+  },
+  {
+    "id": "d1-017",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "You want three research subagents to run at the same time to cut wall-clock latency. Your coordinator currently emits one Task call, waits for the result, then emits the next. What change achieves real parallelism?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Raise the coordinator's max_tokens so it has room to plan all three delegations in one turn."
+      },
+      {
+        "key": "B",
+        "text": "Have the first subagent spawn the other two so they run outside the coordinator's turn order."
+      },
+      {
+        "key": "C",
+        "text": "Emit several Task calls in a single coordinator response rather than across separate turns."
+      },
+      {
+        "key": "D",
+        "text": "Set a parallel: true flag in each AgentDefinition so the runtime batches their invocations."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Parallel subagent execution comes from multiple Task calls emitted in one response. Sequential turns are sequential by construction.",
+    "why": {
+      "A": "Token budget is not what serializes the calls.",
+      "B": "Peer-to-peer spawning breaks hub-and-spoke observability and does not change the turn structure.",
+      "D": "No such flag exists; parallelism is a property of how the calls are emitted."
+    }
+  },
+  {
+    "id": "d1-018",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Findings pass from the analysis subagent to synthesis as a single prose blob. The final report's citations are frequently attached to the wrong claims. What context-passing change most directly preserves attribution?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Instruct the synthesis agent to preserve each citation carefully when it writes the report."
+      },
+      {
+        "key": "B",
+        "text": "Have synthesis re-fetch every source to confirm its citation before writing the report."
+      },
+      {
+        "key": "C",
+        "text": "Pass fewer findings at a time so there is less opportunity for claims and sources to cross."
+      },
+      {
+        "key": "D",
+        "text": "Pass structured findings that carry source URL, document name and page number with each claim."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Attribution survives handoffs only when it is structurally attached to each claim. Prose forces the downstream agent to re-associate claims and sources by inference.",
+    "why": {
+      "A": "The agent cannot preserve a mapping its input never encoded.",
+      "B": "Expensive verification to recover information that should not have been lost in the handoff.",
+      "C": "Fewer findings means a thinner report, and the mismatches persist among those that remain."
+    }
+  },
+  {
+    "id": "d1-019",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your coordinator prompt for a research subagent reads: \"Step 1: search Google Scholar. Step 2: retrieve the top 10 results. Step 3: summarize each in 3 sentences. Step 4: return.\" Subagents now perform poorly on topics where scholarly sources are scarce. What is the better prompt design?",
+    "options": [
+      {
+        "key": "A",
+        "text": "State the research goal and the quality criteria, and let the subagent adapt its approach."
+      },
+      {
+        "key": "B",
+        "text": "Add steps covering the other source types to try when scholarly sources are scarce."
+      },
+      {
+        "key": "C",
+        "text": "Have the coordinator detect scarce-source topics up front and route them to another subagent."
+      },
+      {
+        "key": "D",
+        "text": "Lower the result count from 10 to 5 so the subagent is not forced to pad its summaries."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Procedural step-by-step instructions remove exactly the adaptability that made delegation worthwhile. Goals plus quality criteria let the subagent respond to what it actually finds.",
+    "why": {
+      "B": "Enumerating more branches is the decision-tree trap: it covers only the cases you anticipated.",
+      "C": "The coordinator cannot know how much scholarly material exists before anyone searches.",
+      "D": "Reduces padding without restoring any adaptability."
+    }
+  },
+  {
+    "id": "d1-020",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You want to compare two refactoring strategies for the same legacy module, both starting from the same expensive codebase analysis you already completed in this session, and then keep working interactively in whichever branch looks better. What is the appropriate mechanism?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run /compact and then explore both strategies sequentially in the same session."
+      },
+      {
+        "key": "B",
+        "text": "fork_session, creating an independent branch per strategy from the shared baseline."
+      },
+      {
+        "key": "C",
+        "text": "--resume with the session name, run strategy A, then --resume again and run strategy B."
+      },
+      {
+        "key": "D",
+        "text": "Spawn two subagents with Task and pass each the full analysis in its prompt."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "fork_session exists to create divergent branches from one shared baseline, which is precisely comparing two approaches without repeating the analysis.",
+    "why": {
+      "A": "Compaction reduces context; it does not isolate the two explorations from each other.",
+      "C": "Sequential resumes contaminate the second exploration with the first strategy's reasoning.",
+      "D": "A subagent returns one result and ends; there is no branch left to keep working in, and the baseline is re-serialized for nothing."
+    }
+  },
+  {
+    "id": "d1-021",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S3",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "Which two statements about subagent context are correct? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Whatever a subagent needs to know must appear in the prompt the coordinator hands it."
+      },
+      {
+        "key": "B",
+        "text": "Task merges each subagent's result into the coordinator's context without the coordinator reading it."
+      },
+      {
+        "key": "C",
+        "text": "Subagents do not share memory between separate invocations."
+      },
+      {
+        "key": "D",
+        "text": "A subagent automatically receives the coordinator's system prompt and its conversation so far."
+      }
+    ],
+    "correct": [
+      "A",
+      "C"
+    ],
+    "explanation": "Isolation runs both ways: nothing is inherited on the way in, and nothing persists between invocations. Explicit context passing is the whole discipline.",
+    "why": {
+      "B": "The coordinator receives the result and decides what to do with it; nothing is merged silently.",
+      "D": "Each AgentDefinition carries its own system prompt, and no history travels with the invocation."
+    }
+  },
+  {
+    "id": "d1-022",
+    "domain": "D1",
+    "task": "1.3",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You define three subagent types for a developer productivity system: a codebase explorer, a boilerplate generator and a test writer. Where do their tool restrictions belong?",
+    "options": [
+      {
+        "key": "A",
+        "text": "In a shared .mcp.json so every agent ends up with a consistent tool list."
+      },
+      {
+        "key": "B",
+        "text": "In a PostToolUse hook that rejects calls coming from the wrong subagent."
+      },
+      {
+        "key": "C",
+        "text": "In each AgentDefinition, alongside its description and system prompt."
+      },
+      {
+        "key": "D",
+        "text": "In the coordinator's system prompt, as instructions about which tools each subagent may use."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "AgentDefinition carries the description, system prompt and tool restrictions for each subagent type. That is the declarative place for scoped access.",
+    "why": {
+      "A": ".mcp.json configures servers, and one shared list is the opposite of scoping.",
+      "B": "PostToolUse runs after execution, while a scoped definition means the tool is never offered.",
+      "D": "Prompt-level restriction is probabilistic where a configuration-level one is absolute."
+    }
+  },
+  {
+    "id": "d1-023",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Policy states refunds above $500 require supervisor approval. Your system prompt says so explicitly, yet an audit finds four refunds of $700 to $1,200 processed autonomously last quarter. What is the correct remediation?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Restate the $500 threshold in stronger language and repeat it at the end of the system prompt."
+      },
+      {
+        "key": "B",
+        "text": "Add few-shot examples showing the agent escalating a $700 refund instead of processing it."
+      },
+      {
+        "key": "C",
+        "text": "Change the process_refund parameter description so the model reads $500 as a hard ceiling."
+      },
+      {
+        "key": "D",
+        "text": "Intercept process_refund and block amounts above $500, redirecting to human escalation."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Business rules with financial consequences need deterministic enforcement. Interception at the tool call is the guarantee; everything in the prompt is a probability.",
+    "why": {
+      "A": "Emphasis moves the failure rate but does not make it zero.",
+      "B": "Examples improve likelihood, not compliance.",
+      "C": "A description is still text the model may not honour, and it does not stop the call."
+    }
+  },
+  {
+    "id": "d1-024",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "When your agent escalates mid-conversation, human agents complain they have to ask the customer everything again. The escalate_to_human tool currently sends only the customer's last message. What should the handoff include?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A structured summary: customer ID, root cause, amounts, dates and a recommended action."
+      },
+      {
+        "key": "B",
+        "text": "The full raw conversation transcript, so the human loses none of the original detail."
+      },
+      {
+        "key": "C",
+        "text": "A link to the agent's session so the human can read the reasoning and continue it directly."
+      },
+      {
+        "key": "D",
+        "text": "The customer's sentiment score and the agent's own confidence level at the escalation point."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "The receiving human does not have the conversation. A structured handoff with identity, root cause, figures and a recommendation is what makes the escalation useful rather than a restart.",
+    "why": {
+      "B": "A raw transcript makes the human redo the analysis the agent has already done.",
+      "C": "Session access is not a summary, and it moves reconstruction work onto the human.",
+      "D": "Sentiment and self-reported confidence are unreliable and are not what the human needs to act."
+    }
+  },
+  {
+    "id": "d1-025",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "You are deciding which steps of the refund workflow get a programmatic gate and which stay as system prompt guidance. Which requirement most strongly indicates that a step needs the gate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The step returns a large tool result that consumes a significant share of the context budget."
+      },
+      {
+        "key": "B",
+        "text": "The step must run every time, and skipping it has financial or compliance consequences."
+      },
+      {
+        "key": "C",
+        "text": "The step is complex, spans several tools, and the model sometimes runs them out of order."
+      },
+      {
+        "key": "D",
+        "text": "The step is what customers ask about most, so it runs in nearly every conversation."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "The dividing line is whether you need a guarantee. Deterministic compliance requirements get gates; preferences and defaults can live in the prompt.",
+    "why": {
+      "A": "Output size is a context management concern, addressed by trimming the result.",
+      "C": "Out-of-order execution is a symptom, not a requirement. With no consequence attached to a miss, prompt guidance and a retry are proportionate.",
+      "D": "Frequency says nothing about whether a miss is acceptable."
+    }
+  },
+  {
+    "id": "d1-026",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S6",
+    "type": "single",
+    "source": "derived",
+    "stem": "An extraction pipeline must always run a PII redaction tool before any document text reaches the enrichment tools. Which approach guarantees the ordering?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A system prompt rule stating that redaction must always run before any enrichment tool."
+      },
+      {
+        "key": "B",
+        "text": "Setting tool_choice to \"any\" so the model is forced to call a tool on the first turn."
+      },
+      {
+        "key": "C",
+        "text": "A prerequisite gate that blocks the enrichment tools until redaction has returned successfully."
+      },
+      {
+        "key": "D",
+        "text": "Ordering the tool definitions so redaction appears before enrichment in the request's tools array."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "A prerequisite gate is the deterministic mechanism: downstream calls are blocked until the prerequisite has completed.",
+    "why": {
+      "A": "Prompt-based ordering has a non-zero failure rate, which is unacceptable for PII handling.",
+      "B": "\"any\" forces some tool, not the right one, and it says nothing about ordering.",
+      "D": "Array order in the tools array carries no execution semantics."
+    }
+  },
+  {
+    "id": "d1-027",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S1",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "A customer writes: \"My order arrived broken AND I was charged twice AND I want it shipped to my new address.\" The duplicate charge is $1,400, and policy caps autonomous refunds at $500. Which two behaviours should a well-designed agent exhibit? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Block the $1,400 refund at the tool call rather than trusting the threshold stated in the prompt."
+      },
+      {
+        "key": "B",
+        "text": "Escalate the whole ticket to a human, since one of the three items exceeds the autonomous refund limit."
+      },
+      {
+        "key": "C",
+        "text": "Issue the refund as three payments under $500 so no single call crosses the policy ceiling."
+      },
+      {
+        "key": "D",
+        "text": "Resolve the replacement and the address change, and escalate the refund with a structured handoff."
+      }
+    ],
+    "correct": [
+      "A",
+      "D"
+    ],
+    "explanation": "The message decomposes into three items, and each is resolved on its own merits. Only the item that exceeds policy needs a human, and it travels with a structured handoff. The threshold itself is enforced at the tool call, not by the prompt.",
+    "why": {
+      "B": "Escalating all three sends a human work the agent could finish and damages first-contact resolution.",
+      "C": "Splitting a refund to stay under the ceiling evades the control instead of honouring it."
+    }
+  },
+  {
+    "id": "d1-028",
+    "domain": "D1",
+    "task": "1.4",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your team implements the get_customer prerequisite as a prompt rule and measures a 98.2% compliance rate over 50,000 conversations. Management asks whether this is acceptable for refund authorization. What is the correct analysis?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Yes: 98.2% is above the 95% reliability bar generally accepted for LLM systems."
+      },
+      {
+        "key": "B",
+        "text": "Yes, provided a nightly audit reverses the refunds that were issued without verification."
+      },
+      {
+        "key": "C",
+        "text": "Yes, once a few-shot example set pushes measured compliance above 99% in staging."
+      },
+      {
+        "key": "D",
+        "text": "No: 1.8% of 50,000 is about 900 unverified refunds, and a gate removes the risk entirely."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "The point of programmatic enforcement is that the failure rate becomes zero rather than small. When a deterministic gate is available and cheap, arguing about how small the residual risk is misses the design choice.",
+    "why": {
+      "A": "No such bar exists, and financial operations are exactly where residual probability is not tolerable.",
+      "B": "A detective control after the fact does not undo a refund sent to a misidentified account.",
+      "C": "Pushing a probability closer to one leaves it a probability."
+    }
+  },
+  {
+    "id": "d1-029",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Three MCP tools return the same fields in different shapes: one gives dates as Unix epoch seconds and another as ISO 8601 strings, and the third reports order status as a numeric code where the others use strings. The agent regularly miscompares dates and misreads statuses across tools. What is the cleanest fix?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A PostToolUse hook that normalizes the encodings before the model sees the results."
+      },
+      {
+        "key": "B",
+        "text": "A system prompt section describing each tool's encodings and how to convert between them."
+      },
+      {
+        "key": "C",
+        "text": "Few-shot examples showing correct comparisons across the tools' differing encodings."
+      },
+      {
+        "key": "D",
+        "text": "A prompt rule that makes the model show its date arithmetic so mistakes become visible."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Format normalization is deterministic work. Doing it in a PostToolUse hook removes the failure mode entirely and costs no tokens.",
+    "why": {
+      "B": "Makes the model perform a conversion it can get wrong, on every single call.",
+      "C": "Examples reduce the error rate on work that should not be the model's job at all.",
+      "D": "Visible reasoning makes errors easier to spot, not less likely to happen, and it costs tokens on every call."
+    }
+  },
+  {
+    "id": "d1-030",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "You are documenting the two hook patterns your support agent uses: one reshapes MCP timestamps into a single format, the other stops refunds above the policy threshold. Which pair correctly matches hook direction to purpose?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Both run before execution, differing only in whether they may modify the call's arguments."
+      },
+      {
+        "key": "B",
+        "text": "PostToolUse transforms a result coming back; PreToolUse blocks a call before it runs."
+      },
+      {
+        "key": "C",
+        "text": "PostToolUse blocks an outgoing call; PreToolUse interception rewrites the result coming back."
+      },
+      {
+        "key": "D",
+        "text": "Both run after execution, differing only in which of them sees the tool result first."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "PostToolUse sits after execution and reshapes what the model receives. Interception sits before execution, which is the only place a call can be blocked or redirected.",
+    "why": {
+      "A": "PostToolUse operates on the result, after the tool has already executed.",
+      "C": "The two directions are reversed; a hook that runs after execution cannot stop the call.",
+      "D": "An interception hook must run before execution or it cannot prevent the action."
+    }
+  },
+  {
+    "id": "d1-031",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S1",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your interception hook blocks a $900 refund on a duplicate-charge ticket while the customer is waiting in an open chat. What should happen next for the best customer outcome?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Cap the refund at the $500 policy maximum and process that amount instead."
+      },
+      {
+        "key": "B",
+        "text": "End the conversation with a message that the request cannot be processed."
+      },
+      {
+        "key": "C",
+        "text": "Redirect to the escalation workflow with a structured handoff so a human can decide."
+      },
+      {
+        "key": "D",
+        "text": "Return a generic tool error, which prompts the agent to retry with a smaller amount."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Blocking is only half the pattern. Redirecting to an alternative workflow, typically human escalation, is what keeps the interaction moving.",
+    "why": {
+      "A": "Silently changing a financial amount the customer never agreed to is a serious defect.",
+      "B": "Abandons a customer whose request is legitimate but needs authorization.",
+      "D": "Encourages the agent to game the threshold, which is worse than the original problem."
+    }
+  },
+  {
+    "id": "d1-032",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your developer productivity agent occasionally runs destructive shell commands during cleanup tasks. You need a guarantee, not a reduction. Which mechanism applies?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A CLAUDE.md section listing the commands the agent must never run during cleanup."
+      },
+      {
+        "key": "B",
+        "text": "A PostToolUse hook that detects the damage and reports it to the on-call channel."
+      },
+      {
+        "key": "C",
+        "text": "A review of each transcript afterwards, adding newly seen destructive commands to the prompt."
+      },
+      {
+        "key": "D",
+        "text": "A PreToolUse interception hook that inspects the command and blocks destructive patterns."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Only interception before execution can prevent the action. Everything else either advises or reports after the fact.",
+    "why": {
+      "A": "Instructions are probabilistic, and the requirement here is a guarantee.",
+      "B": "PostToolUse runs after the command has already executed.",
+      "C": "Adding commands once you have seen them is reactive, and the prompt stays probabilistic."
+    }
+  },
+  {
+    "id": "d1-033",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "A search MCP tool returns 60 fields per result, of which the synthesis pipeline uses 4. You want to shrink context consumption without changing the third-party server. What is the appropriate mechanism?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Trimming each result to the four fields in a PostToolUse hook before it enters context."
+      },
+      {
+        "key": "B",
+        "text": "Instructing the agent to ignore the fields the pipeline does not use when reading results."
+      },
+      {
+        "key": "C",
+        "text": "Running /compact more often over the course of a long research session."
+      },
+      {
+        "key": "D",
+        "text": "Requesting fewer results per search so the payload the server returns is smaller."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Trimming verbose tool output before it accumulates in context is the standard use of PostToolUse, and it works regardless of who owns the server.",
+    "why": {
+      "B": "Ignoring fields does not stop them consuming tokens; they are already in context.",
+      "C": "Compaction cleans up afterwards instead of preventing the bloat.",
+      "D": "Trades away coverage to fix what is really a payload shape problem."
+    }
+  },
+  {
+    "id": "d1-034",
+    "domain": "D1",
+    "task": "1.5",
+    "scenario": "S1",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "Which two problems are appropriately solved with hooks rather than prompt engineering? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Guaranteeing that no refund above the policy threshold is ever processed autonomously."
+      },
+      {
+        "key": "B",
+        "text": "Converting three timestamp encodings into one canonical format before the model reads them."
+      },
+      {
+        "key": "C",
+        "text": "Making the agent's tone more empathetic when a customer is frustrated by a repeated failure."
+      },
+      {
+        "key": "D",
+        "text": "Choosing between two similar lookup tools when the customer's request is ambiguous."
+      }
+    ],
+    "correct": [
+      "A",
+      "B"
+    ],
+    "explanation": "Hooks handle deterministic guarantees and deterministic transformations. Judgment and tone remain prompt-level concerns.",
+    "why": {
+      "C": "Tone is inherently a prompting concern with no deterministic definition to enforce.",
+      "D": "Tool selection is driven by tool descriptions, not by hooks."
+    }
+  },
+  {
+    "id": "d1-035",
+    "domain": "D1",
+    "task": "1.6",
+    "scenario": "S5",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your CI review prompt asks for security, performance, error handling and test coverage feedback in one pass per file. Reviewers report the security notes are solid, the performance notes are thin, and test coverage is mentioned in fewer than one review in five. What restructuring fits this workload?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run the combined prompt three times and merge whichever aspects each run happened to cover."
+      },
+      {
+        "key": "B",
+        "text": "Chain one focused pass per aspect over the same file, each with its own criteria."
+      },
+      {
+        "key": "C",
+        "text": "Reorder the prompt so test coverage is requested first and security is requested last."
+      },
+      {
+        "key": "D",
+        "text": "Let the model decide per pull request which aspects are worth covering and skip the rest."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "The aspects are the same for every pull request, which is the predictable multi-aspect shape prompt chaining exists for. One focused pass per aspect gives each the same depth instead of letting the later ones fade.",
+    "why": {
+      "A": "Repeating a diluted prompt multiplies cost and still leaves coverage to chance.",
+      "C": "Reordering moves the dilution to whichever aspect ends up last; it does not remove it.",
+      "D": "Dynamic decomposition suits open-ended investigation, not a checklist that must be applied every time."
+    }
+  },
+  {
+    "id": "d1-036",
+    "domain": "D1",
+    "task": "1.6",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "The task is \"add comprehensive tests to this legacy codebase\", with no test suite and no documentation. Which decomposition strategy fits?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A single prompt holding the whole repository, with an instruction to test every module thoroughly."
+      },
+      {
+        "key": "B",
+        "text": "Per-file passes in alphabetical order until line coverage reaches an agreed target."
+      },
+      {
+        "key": "C",
+        "text": "Dynamic decomposition: map the structure, find high-impact areas, then adapt the plan."
+      },
+      {
+        "key": "D",
+        "text": "A fixed pipeline: enumerate the files, write one test file per source file, run the suite."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Open-ended work whose shape is unknown until you look needs a plan that generates subtasks from what each step discovers.",
+    "why": {
+      "A": "Attention dilution at the largest possible scale.",
+      "B": "Alphabetical order is arbitrary, and a coverage percentage is not the same as valuable tests.",
+      "D": "A fixed one-to-one mapping produces low-value tests and ignores what actually matters."
+    }
+  },
+  {
+    "id": "d1-037",
+    "domain": "D1",
+    "task": "1.6",
+    "scenario": "S5",
+    "type": "single",
+    "source": "derived",
+    "stem": "Which observation is the clearest signal that attention dilution, rather than model capability, is causing poor review quality?",
+    "options": [
+      {
+        "key": "A",
+        "text": "The review misses a bug class that needs domain knowledge the model was never given."
+      },
+      {
+        "key": "B",
+        "text": "The review's suggestions ignore the team's naming conventions in most of the files."
+      },
+      {
+        "key": "C",
+        "text": "The review takes 9 minutes, well over the 4 minute budget for the CI job."
+      },
+      {
+        "key": "D",
+        "text": "The same pattern is flagged in one file and approved in another within a single review."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "Contradictory findings on identical code inside one pass is the signature of attention being spread too thin, not of a knowledge gap.",
+    "why": {
+      "A": "That is a missing-context problem, fixed by supplying the domain knowledge.",
+      "B": "That is a conventions problem, addressed in CLAUDE.md or a path-scoped rule.",
+      "C": "That is a performance concern, unrelated to the consistency of the judgments."
+    }
+  },
+  {
+    "id": "d1-038",
+    "domain": "D1",
+    "task": "1.6",
+    "scenario": "S5",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your per-file review passes work well but miss a bug where a function's contract changed in one file while three callers in other files were not updated. What is missing?",
+    "options": [
+      {
+        "key": "A",
+        "text": "A separate cross-file pass that examines data flow and contracts between the files."
+      },
+      {
+        "key": "B",
+        "text": "A larger context window on each per-file pass so neighbouring files fit alongside it."
+      },
+      {
+        "key": "C",
+        "text": "Per-file criteria that tell the reviewer to check every caller of a changed function."
+      },
+      {
+        "key": "D",
+        "text": "Running each per-file pass twice and reporting only the issues that appear both times."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "Local passes cannot see what they do not load. Cross-file issues need a pass whose scope is explicitly the relationships between files.",
+    "why": {
+      "B": "The pass is deliberately scoped to one file; widening it recreates the dilution you split to avoid.",
+      "C": "A pass that has loaded one file cannot check callers it has never read.",
+      "D": "Repeating a locally scoped pass does not widen its scope."
+    }
+  },
+  {
+    "id": "d1-039",
+    "domain": "D1",
+    "task": "1.6",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your research system runs the same four passes on every topic: search, analyze, synthesize, report. On a topic where the decisive evidence turned out to sit in an ongoing lawsuit, the pipeline had nowhere to follow that thread and the report missed it entirely. What decomposition change addresses this?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run the four passes twice, feeding the first report back in as input to the second run."
+      },
+      {
+        "key": "B",
+        "text": "Let the plan generate follow-up subtasks from what each pass discovers."
+      },
+      {
+        "key": "C",
+        "text": "Add a fifth fixed pass that checks for legal and regulatory angles on every topic."
+      },
+      {
+        "key": "D",
+        "text": "Raise the number of sources the search pass must return before analysis starts."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Work whose shape is only revealed by intermediate findings needs adaptive decomposition, where the plan creates subtasks from what has been discovered rather than from a list fixed in advance.",
+    "why": {
+      "A": "A second run repeats the same four passes and hits the same wall.",
+      "C": "Enumerating one more branch covers only the case you just saw; the next topic turns on something else.",
+      "D": "More sources feeding the same four passes does not create a pass that follows a new thread."
+    }
+  },
+  {
+    "id": "d1-040",
+    "domain": "D1",
+    "task": "1.7",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You resume yesterday's named investigation session with --resume refund-flow-audit. Overnight, a teammate refactored two of the files you analyzed. The agent confidently answers using the old structure. What should you do?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run /compact so summarization drops the stale file contents from context."
+      },
+      {
+        "key": "B",
+        "text": "Fork the session so the old analysis and a re-run against the new files can be compared."
+      },
+      {
+        "key": "C",
+        "text": "Tell the resumed session which files changed and ask for targeted re-analysis of those."
+      },
+      {
+        "key": "D",
+        "text": "Start a new session and re-explore the whole codebase from scratch."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Resumption is right when most prior context is still valid. Naming the changed files gives targeted re-analysis instead of throwing away work that is still good.",
+    "why": {
+      "A": "Compaction condenses context; it has no way to know which parts stopped being true.",
+      "B": "Forking is for exploring divergent approaches, not for correcting stale facts.",
+      "D": "Discards a large amount of still-valid analysis over two changed files."
+    }
+  },
+  {
+    "id": "d1-041",
+    "domain": "D1",
+    "task": "1.7",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You return to a session after a two-week sprint during which the module was rewritten, dependencies upgraded and the directory layout changed. Which approach is more reliable?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Resume the named session and list the changes, as with any resumption."
+      },
+      {
+        "key": "B",
+        "text": "Resume and run /compact first so the stale context is condensed."
+      },
+      {
+        "key": "C",
+        "text": "Fork the old session so the stale branch stays available for reference."
+      },
+      {
+        "key": "D",
+        "text": "Start a new session and inject a structured summary of what still holds."
+      }
+    ],
+    "correct": [
+      "D"
+    ],
+    "explanation": "When prior tool results are broadly stale, a fresh session with a curated summary is more reliable than a resume carrying mostly-wrong observations.",
+    "why": {
+      "A": "The list of changes would be longer than the context that survived them.",
+      "B": "Compaction preserves stale claims in condensed form.",
+      "C": "Preserving a stale branch does nothing to make the current work correct."
+    }
+  },
+  {
+    "id": "d1-042",
+    "domain": "D1",
+    "task": "1.7",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You forked your codebase analysis session twice, once per refactoring strategy. After an hour of work in branch A, you switch to branch B and find it has the original analysis but no knowledge of anything branch A concluded. A teammate calls this a bug. How should you respond?",
+    "options": [
+      {
+        "key": "A",
+        "text": "It is expected: each branch carries the history up to the fork point and nothing after it."
+      },
+      {
+        "key": "B",
+        "text": "It is a bug: forked branches stay in sync, so branch B should hold branch A's conclusions."
+      },
+      {
+        "key": "C",
+        "text": "It is expected, because a fork starts from an empty context and rebuilds the analysis itself."
+      },
+      {
+        "key": "D",
+        "text": "It is expected only because branch A was never saved; saving it would sync both branches."
+      }
+    ],
+    "correct": [
+      "A"
+    ],
+    "explanation": "A fork starts a new session with a copy of the conversation up to the fork point, and the branches diverge from there. That independence is the point: it is what lets you compare two approaches. Anything one branch learns reaches the other only if you pass it across yourself.",
+    "why": {
+      "B": "Branches diverge at the fork point; nothing flows between them afterwards.",
+      "C": "A fork inherits the baseline conversation, which is why the original analysis is there.",
+      "D": "There is no save step that merges branches back together."
+    }
+  },
+  {
+    "id": "d1-043",
+    "domain": "D1",
+    "task": "1.7",
+    "scenario": "S4",
+    "type": "single",
+    "source": "derived",
+    "stem": "You keep several long-running codebase investigation sessions. Which factor most directly determines whether to resume one or start fresh with an injected summary?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Whether the earlier work was done by subagents or in the main session."
+      },
+      {
+        "key": "B",
+        "text": "Whether the prior tool results still match the current code."
+      },
+      {
+        "key": "C",
+        "text": "How many days have passed since the session was last worked on."
+      },
+      {
+        "key": "D",
+        "text": "How much of the session's context budget the earlier exploration consumed."
+      }
+    ],
+    "correct": [
+      "B"
+    ],
+    "explanation": "Staleness of prior tool results is the deciding factor. Elapsed time only matters through its effect on staleness.",
+    "why": {
+      "A": "Where the earlier work ran does not change whether its findings are still true.",
+      "C": "A month-old session on frozen code is fine; an hour-old one after a rewrite is not.",
+      "D": "Context pressure argues for compaction or a fresh start, but it is not what makes a resume unreliable."
+    }
+  },
+  {
+    "id": "d1-044",
+    "domain": "D1",
+    "task": "1.7",
+    "scenario": "S4",
+    "type": "multi",
+    "selectCount": 2,
+    "source": "derived",
+    "stem": "Which two practices improve reliability when working across multiple sessions on a long codebase investigation? (Select 2)",
+    "options": [
+      {
+        "key": "A",
+        "text": "Keeping findings only in the conversation so they stay in context for every turn."
+      },
+      {
+        "key": "B",
+        "text": "Using named sessions so a specific investigation can be resumed deliberately."
+      },
+      {
+        "key": "C",
+        "text": "Telling a resumed session which files changed instead of re-exploring everything."
+      },
+      {
+        "key": "D",
+        "text": "Starting fresh every morning so no stale observation can survive into the next day."
+      }
+    ],
+    "correct": [
+      "B",
+      "C"
+    ],
+    "explanation": "Named sessions make resumption deliberate; targeted change notices preserve valid work while correcting what moved.",
+    "why": {
+      "A": "Conversation-only findings are exactly what degrades and gets compacted away; scratchpad files exist for this.",
+      "D": "Throws away valid analysis every day at significant cost in time and tokens."
+    }
+  },
+  {
+    "id": "d1-045",
+    "domain": "D1",
+    "task": "1.2",
+    "scenario": "S3",
+    "type": "single",
+    "source": "derived",
+    "stem": "Your coordinator invokes subagents in a strict order every run and passes each one the entire accumulated output of all previous subagents. Latency and cost are climbing. Which two-part change is most appropriate?",
+    "options": [
+      {
+        "key": "A",
+        "text": "Run every subagent in parallel and let each one filter the accumulated output itself."
+      },
+      {
+        "key": "B",
+        "text": "Move every subagent to a model with a larger context window so the accumulated output fits."
+      },
+      {
+        "key": "C",
+        "text": "Select subagents per query, and pass each one only the structured findings it needs."
+      },
+      {
+        "key": "D",
+        "text": "Keep the fixed order but summarize the accumulated output between each pair of stages."
+      }
+    ],
+    "correct": [
+      "C"
+    ],
+    "explanation": "Two separate coordinator responsibilities are being neglected: choosing which subagents a query needs, and passing scoped, structured context rather than everything.",
+    "why": {
+      "A": "Filtering after the tokens are already in context saves nothing, and synthesis has real dependencies.",
+      "B": "Pays more to keep sending irrelevant context.",
+      "D": "Summarization between stages is where numerical facts and attribution get destroyed."
+    }
+  }
+]
