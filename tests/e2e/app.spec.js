@@ -3,20 +3,24 @@ import { expect, test } from '@playwright/test'
 /**
  * End-to-end coverage of the study flows.
  *
- * Each test starts from a clean database. OPFS is per-origin and survives page
- * loads, so the reset has to happen in the browser, not by clearing cookies.
+ * Each test starts from a clean database, through the app's own reset rather
+ * than by deleting the OPFS directory underneath a worker that still holds it
+ * open. The earlier version did the latter inside a catch that swallowed the
+ * failure, so a test could quietly start on the previous test's data.
  */
 
 async function freshApp(page) {
+  await page.goto('/#/settings')
+  await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
+  page.once('dialog', (d) => d.accept())
+  await page.getByRole('button', { name: 'Delete all progress' }).click()
+  await expect(page.getByText('All progress deleted')).toBeVisible()
+
   await page.goto('/#/dashboard')
-  await page.evaluate(async () => {
-    for await (const [name] of navigator.storage.getDirectory()) {
-      await navigator.storage.getDirectory().then((d) => d.removeEntry(name, { recursive: true }))
-    }
-    localStorage.clear()
-  }).catch(() => {})
-  await page.reload()
   await expect(page.getByRole('heading', { name: 'Where you stand' })).toBeVisible()
+  // Assert the reset actually happened, so a broken reset fails here and not
+  // three tests later on something unrelated.
+  await expect(page.getByText('0 of 279 answered')).toBeVisible()
 }
 
 test.beforeEach(async ({ page }) => {

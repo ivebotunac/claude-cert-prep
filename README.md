@@ -1,234 +1,116 @@
 # CCAR-F Prep
 
-An offline study app for the **Claude Certified Architect – Foundations** exam (CCAR-F).
+An offline study app for the **Claude Certified Architect, Foundations** exam.
 
-Svelte 5, Vite, Tailwind v4, and two real SQLite databases running in the browser. No
-server, no accounts, no network calls at all: even the two typefaces are bundled. Your
-progress is a SQLite file that never leaves your machine, and you can export it.
+Vibe coded start to finish, and then made to behave: 48 unit tests, 54 end-to-end tests, and
+a content audit that fails the build if the question bank drifts. The vibes got it built. The
+tests are why it can be trusted with an exam you paid USD 125 to sit.
 
-**279 practice questions** (12 of them the official samples, verbatim), **140 flashcards**
-on a Leitner schedule, all **30 task statements** from the official blueprint as study
-material, and a timed mock exam that draws to the real domain weights.
+**279 practice questions** (12 of them the official samples, verbatim), **140 flashcards**,
+all **30 task statements** from the blueprint, the guide's own **build exercises**, and a
+timed mock exam that draws to the real domain weights.
+
+Everything runs in the browser. No server, no accounts, and no network calls at all: the
+question bank, the fonts and SQLite itself are all bundled.
 
 ---
 
-## Quick start
+## Run it
 
-```bash
-npm install
-npm run dev          # http://localhost:5173
+```sh
+./bin/run.sh
 ```
 
-That is the whole setup. Build a static bundle with `npm run build`, preview it with
-`npm run preview`.
+That is the whole thing. It installs, builds, serves, and opens a browser. Needs Node 22+
+and nothing else.
 
-To get a readable `git diff` on the content database, once per clone:
+Already set up and just want the dev server: `npm run dev`.
 
-```bash
-git config diff.sqlite.textconv 'sqlite3 "$1" .dump'
-```
+**Double-clicking `dist/index.html` does not work**, and no build flag can fix it. A module
+script loaded from `file://` has the origin `null` and the browser blocks it; the worker,
+the content database and OPFS all need a real origin too. That is why there is a script.
 
-## Scripts
+## What is in it
 
-| Command | What it does |
+| | |
 |---|---|
-| `npm run dev` | Dev server with hot reload |
-| `npm run build` | Static build into `dist/` |
-| `npm run preview` | Serve the built bundle |
-| `npm run check` | Type check every `.js` and `.svelte` file via JSDoc |
-| `npm run test:unit` | Vitest: pure logic, and the content quality audit |
-| `npm run test:e2e` | Playwright, real browser, desktop and mobile |
-| `npm run test:all` | Both suites |
-
-## How it is laid out
-
-```
-content/
-  ccarf-content.sqlite3   the study material, and the source of truth for it
-src/
-  App.svelte              shell, route table, boot and error states
-  app.css                 Tailwind v4 theme tokens, and the self-hosted faces
-  lib/
-    content.js            reads the content database into the shapes views render
-    router.svelte.js      hash router, about forty lines
-    util.js               pure helpers: shuffling, scoring, formatting
-    db/
-      schema.sql          the progress schema
-      content-schema.sql  the content schema, as documentation and a rebuild path
-      worker.js           SQLite runs here, and only here
-      index.js            promise-based RPC to the worker
-      queries.js          every SQL statement the app runs
-    stores/progress.svelte.js   reactive mirror of the database
-    components/           Question, Nav, Meter, Stat, DomainBadge, Empty
-    routes/               one component per view
-tests/
-  unit/                   Vitest: util.js, and the question bank audit
-  e2e/                    Playwright
-```
+| **Overview** | Readiness, per-domain progress, weakest objectives, what to do next |
+| **Study** | The 30 task statements with their knowledge, skills and traps, plus worked code where the rule is otherwise vague |
+| **Cards** | A term on the front, what it is on the back, on a Leitner schedule. Deliberately not questions: that is what Quiz is for |
+| **Practice** | The guide's own seven things to build and four hands-on exercises, ticked off as you do them |
+| **Quiz** | Immediate feedback, with the named reason each wrong option fails |
+| **Mock exam** | 60 items, 120 minutes, four scenarios of six, sampled to the real weights |
+| **Review** | What you got wrong, what you flagged, and what you have answered both ways |
+| **Resources** | Exam strategy, the four architectural tensions, distractor patterns, scope lists |
+| **Settings** | Export, import, reset, and what the storage is actually doing |
 
 ## Two databases
 
-Both are SQLite compiled to WebAssembly, on one connection, in a dedicated worker.
+Both are SQLite compiled to WebAssembly, on one connection, in a worker.
 
-| Schema | What | Persistence |
-|---|---|---|
-| `main` | Progress: reading marks, Leitner boxes, answers, flags, mock attempts | Written to OPFS, and what export serialises |
-| `content` | The study material: blueprint, tasks, questions, options, flashcards | Read-only, loaded from the shipped `.sqlite3` file on every boot |
+**Progress** is yours: reading marks, Leitner boxes, answers, flags, mock attempts. Written
+to OPFS, and the only thing export serialises.
 
-They are on one connection so a single statement can join a question to the answers given
-for it. Which questions count as missed, shaky, flagged or unseen is decided by SQL, not by
-filtering an array afterwards.
+**Content** is the study material, loaded from a shipped `.sqlite3` file and attached
+read-only. SQLite refuses a write to it, so nothing in the app can rewrite an exam question,
+and an exported progress file carries none of the guide with it.
 
-`content` is attached with `ATTACH ':memory:'` and then filled by `sqlite3_deserialize()`
-with the **SQLITE_DESERIALIZE_READONLY** flag, so a write to it fails with `SQLITE_READONLY`.
-That is enforced by SQLite rather than by convention, and there is a test for it.
+They share a connection so a single query can join a question to the answers you gave for
+it. That join is what decides the review lists, and what lets Review show the option you
+actually picked beside the right one.
 
-Because `sqlite3_js_db_export()` serialises `main` alone, an exported progress file contains
-your history and nothing else. The exam content does not travel with it.
-
-### Why the worker is not an optimisation
-
-`FileSystemFileHandle.createSyncAccessHandle()`, which the persistent OPFS backend is built
-on, **is only exposed inside a worker**. On the main thread the pool silently fails to
-install and SQLite quietly falls back to localStorage. Running it in a worker also keeps the
-UI responsive during an import.
-
-Three backends for progress, tried in order:
-
-| Backend | Persistent | Notes |
-|---|---|---|
-| `opfs-sahpool` | yes | Origin Private File System, SyncAccessHandle pool VFS. Fastest. Does **not** need the COOP/COEP headers the plain `opfs` VFS requires, which is what makes it work on static hosts. One tab at a time. |
-| `kvvfs` | yes | Backed by localStorage. Same SQL, capped at a few megabytes. Used in a private window or a second tab. |
-| `memory` | no | Last resort. The app says so and pushes you to export. |
-
-Settings shows which one you got. The content database is unaffected by the choice: it is
-in memory either way.
-
-### Why progress is a database rather than a JSON blob
-
-Every table records **events**, not just current state. Every card grading, every answer,
-every attempt. So "how did my accuracy in Domain 2 move over three weeks" is a query, and
-the weakest-objectives panel on the dashboard is a `GROUP BY`. Aggregates can be derived; a
-history never written cannot be recovered.
-
-Export gives you a real `.sqlite3` file. Open it with the `sqlite3` CLI or DB Browser for
-SQLite and query your own study history:
+Export gives you a real `.sqlite3` file. Open it with the `sqlite3` CLI and query your own
+study history:
 
 ```sql
 SELECT domain, COUNT(*) AS answered, ROUND(100.0 * SUM(is_correct) / COUNT(*), 1) AS accuracy
 FROM answers GROUP BY domain ORDER BY accuracy;
 ```
 
-## What is in each section
-
-- **Dashboard**: readiness score, per-domain progress, weakest objectives ranked by
-  accuracy, and a recommendation based on whichever signal is weakest.
-- **Study**: the blueprint as readable material. Each task statement expands to its
-  knowledge and skills bullets plus the traps that punish skimming. Tick one when you can
-  explain it without looking.
-- **Flashcards**: a term on the front, what it is on the back. Leitner boxes at 1, 3, 7, 21 and 60
-  days. Space reveals, then 1/2/3 grades. Deliberately not questions: that is what Quiz is for.
-- **Quiz**: immediate feedback with the reason each distractor fails. Scope by domain,
-  scenario, task statement, or to what you have not tried, got wrong, or flagged.
-- **Mock exam**: 60 items in 120 minutes, four scenarios of six, sampled to the
-  27/18/20/20/15 weights and grouped by scenario so each narrative is read once. No feedback
-  until you submit. Closing the tab does not lose the attempt, and the clock keeps running.
-- **Review**: what you got wrong, what you flagged, and what you have answered both ways at
-  different times. The third list is where the real gaps hide.
-- **Practice**: the guide's own seven things to build and four hands-on exercises, with steps,
-  ticked off as you do them. Reading tells you what the exam covers; this is the part you do.
-- **Resources**: exam strategy, the four architectural tensions, the distractor patterns, the
-  reading list, in-scope and out-of-scope lists, exam-day mechanics and policies.
-- **Settings**: option shuffling, storage backend, content stamp, export, import, reset.
-
 ## Editing the content
 
-The database is the source of truth, so an edit is SQL:
+The database is the source of truth. There is no JSON and no build step:
 
 ```sh
 sqlite3 content/ccarf-content.sqlite3
 sqlite> UPDATE questions SET stem = '...' WHERE id = 'd3-014';
 ```
 
-DB Browser for SQLite works too if you would rather see a grid. Either way, run
-`npm run test:unit` afterwards: the audit is a test, and it fails on anything that would let
-a candidate beat the bank without knowing the material. The schema's own CHECK constraints
-catch the structural mistakes first, including the one that matters most, that every
-distractor carries a stated reason for failing and no correct option does.
+Then `npm run test:unit`. The audit fails on anything that would let a candidate beat the
+bank without knowing the material: a skewed answer key, the correct option being the
+longest too often, an out-of-scope topic, a flashcard front that is secretly a question.
 
-`git diff` on the database is readable once the textconv driver above is configured.
+For a readable `git diff` on the database, once per clone:
 
-## Content quality
+```sh
+git config diff.sqlite.textconv 'sqlite3 "$1" .dump'
+```
 
-A practice bank is worse than useless if it can be beaten without knowing the material.
-`tests/unit/content.test.js` is the guard, and it runs with every `npm run test:unit`.
+## Two things worth knowing
 
-Current state of the bank:
+**The guide contains no code.** Not one line in thirty-nine pages. The exam is judgement on
+prose scenarios. The worked examples under about a third of the task statements are ours,
+written to make an abstract rule concrete, and the app says so under every one.
 
-| Check | Result |
-|---|---|
-| Answer key spread | A 26%, B 26%, C 25%, D 23% |
-| Correct answer is the longest option | 21% (chance is ~25%) |
-| Out-of-scope topics tested | none |
-| Near-duplicate stems | none |
-| Questions per domain vs mock draw | 4.4x to 4.9x |
-| Multiple-response share | 14% |
-| Flashcard fronts that are questions | none |
-| Official samples verbatim against the guide | 12 of 12 |
-
-Answer position is guarded twice: the keys were rotated flat across the bank when it was
-written, and the app **shuffles options at render time**, seeded from the question id plus a
-per-sitting salt. The order stays stable while you are looking at an item, and differs next
-time.
-
-## The look
-
-One palette, light. There is no dark variant on purpose: a single set of colours tuned
-once stays honest, where two sets drift until one of them is quietly wrong.
-
-It is built as an instrument rather than a dashboard. Structure comes from a grid of
-one-pixel rules, so there are no rounded corners and no shadows anywhere. IBM Plex Sans
-carries the text and IBM Plex Mono carries **every number**, which is what stops a figure
-reading as a label. Teal is the only accent; the five domain colours appear as small
-squares and never as fills.
-
-Both faces are self-hosted from `@fontsource`, latin subset, three weights each, about
-110 KB in total. A webfont link would have been smaller to set up and would have broken
-the promise at the top of this file.
-
-## The scaled score is an approximation
-
-Anthropic publishes the cut score (720 on 100–1,000) but not the mapping from raw correct
-answers to scaled points. The app anchors 720 at 70% correct and interpolates linearly.
-Treat it as a signal and watch the raw percentage too.
+**The scaled score is an approximation.** Anthropic publishes the cut score but not the
+mapping from raw correct answers to scaled points, so the app anchors 720 at 70% and
+interpolates. Watch the raw percentage too.
 
 ## Exam facts
 
-60 items, 120 minutes (about 135 minutes seat time), 4 scenarios drawn from a bank of 6.
-Multiple-choice and multiple-response; each item states how many to select. Pass at 720 on a
-100–1,000 scale. USD 125 per attempt. Valid 12 months, renewed with a free non-proctored
-assessment. Delivered by Pearson VUE, online proctored or at a test centre. Retake waits:
-14 days, then 30, then 90; four attempts per rolling 12 months.
+60 items, 120 minutes, 4 scenarios drawn from a bank of 6. Multiple-choice and
+multiple-response, each item stating how many to select. Pass at 720 on 100 to 1,000.
+USD 125 an attempt, valid 12 months. Pearson VUE, online proctored or at a test centre.
+Retake waits of 14, then 30, then 90 days, four attempts a year.
 
-## The guide has no code
+## Commands
 
-Not one line, in thirty-nine pages. The exam is judgement on prose scenarios, and the twelve
-official samples are prose with prose options.
-
-The worked examples under about a third of the task statements are therefore **ours**, written
-to make an abstract rule concrete, and the app says so under every one. They exist only where
-the rule stays vague without them. Adding code to a statement that is already clear teaches
-syntax the exam never asks about.
-
-## Sources
-
-The `domains`, `scenarios`, `tasks`, `task_bullets` and `questions` tables, and the `docs`
-rows other than `context`, are transcribed from the official *Claude Certified Architect –
-Foundations Exam Guide*, v1.0, July 2026. `content_meta` records which revision.
-
-The `context` doc is researched context gathered on 31 August 2026, kept separate because it
-is **not** the guide. Where the two disagree, the guide wins, and the app labels the
-researched material as such.
+| | |
+|---|---|
+| `./bin/run.sh` | Install, build, serve, open |
+| `npm run dev` | Dev server with hot reload |
+| `npm run check` | Type check via JSDoc |
+| `npm run test:all` | Unit tests, the content audit, and the browser tests |
 
 ## Licence
 

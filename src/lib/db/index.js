@@ -214,7 +214,9 @@ export async function importBytes(buffer) {
 /** Drop every row but keep the schema. */
 export async function reset() {
   await transaction((tx) => {
-    for (const t of ['answers', 'attempts', 'reviews', 'cards', 'reading', 'flags', 'settings']) {
+    // Every table in schema.sql. A new table that is not listed here survives a
+    // reset, which is a silent bug: the button says all progress and means it.
+    for (const t of ['answers', 'attempts', 'reviews', 'cards', 'reading', 'practice', 'flags', 'settings']) {
       tx.run(`DELETE FROM ${t}`)
     }
     tx.run("DELETE FROM sqlite_sequence WHERE name IN ('answers', 'attempts', 'reviews')")

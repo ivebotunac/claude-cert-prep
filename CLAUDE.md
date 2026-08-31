@@ -10,6 +10,7 @@ tells that let someone pass a practice test without knowing the material.
 ## Commands
 
 ```bash
+./bin/run.sh                             # install, build, serve, open
 npm run dev                              # dev server
 npm run build                            # static build into dist/
 npm run check                            # type check via JSDoc; must be 0 errors
