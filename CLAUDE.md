@@ -225,6 +225,19 @@ Invisible to a schema check, and both let someone score well knowing nothing.
 3. The `context` row in `docs` is **researched context, not the guide**. Where it disagrees
    with the guide's own tables, the guide wins.
 
+**A web search will contradict the guide on item format, and the web is wrong.** v1.0 says
+"Multiple-choice and multiple-response items; each item states how many responses to select".
+The superseded v0.1 of February 2025 said "select the single response", and copies of it are
+still near the top of the results on several prep sites, so anyone who checks this online
+finds confident sources on both sides. Verified against the v1.0 PDF on 2026-08-31, which is
+byte-identical to the one Anthropic links from the Partner Academy. Do not "fix" the bank on
+the strength of a search result.
+
+Two things in the app are ours rather than the guide's, and neither is published anywhere:
+the share of multiple-response items, roughly one in seven here, and scoring them all or
+nothing. All twelve official samples are single-answer, which is where the impression that
+the exam has no multi-response items comes from.
+
 If the guide is revised past v1.0, the tables to re-check against it are `tasks` and
 `task_bullets` (all 30 statements, titles and bullet counts), `domains` (the five weights),
 `scenarios` (six titles), and the `meta`, `inScope` and `outOfScope` docs.
