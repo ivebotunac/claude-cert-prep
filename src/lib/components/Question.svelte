@@ -182,7 +182,11 @@
       style="border-left-color: {correct ? 'var(--color-ok)' : 'var(--color-bad)'}"
     >
       <p class="flex flex-wrap items-baseline gap-x-2.5 text-[14px]">
-        <span class="font-semibold" style="color: {correct ? 'var(--color-ok)' : 'var(--color-bad)'}">
+        <span
+          data-testid="verdict"
+          class="font-semibold"
+          style="color: {correct ? 'var(--color-ok)' : 'var(--color-bad)'}"
+        >
           {correct ? 'Correct.' : selected.length ? 'Not quite.' : 'Unanswered.'}
         </span>
         {#if !correct}

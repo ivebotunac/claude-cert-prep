@@ -7,13 +7,19 @@ import { expect, test } from '@playwright/test'
  * than by deleting the OPFS directory underneath a worker that still holds it
  * open. The earlier version did the latter inside a catch that swallowed the
  * failure, so a test could quietly start on the previous test's data.
+ *
+ * Locators here are exact or anchored on purpose. Playwright matches an
+ * accessible name by substring by default, and these pages render question and
+ * flashcard text drawn at random from the bank, so a loose name like 'Flag'
+ * eventually collides with an option that happens to contain the word and the
+ * run fails on content rather than on behaviour.
  */
 
 async function freshApp(page) {
   await page.goto('/#/settings')
   await expect(page.getByRole('heading', { name: 'Settings' })).toBeVisible()
   page.once('dialog', (d) => d.accept())
-  await page.getByRole('button', { name: 'Delete all progress' }).click()
+  await page.getByRole('button', { name: 'Delete all progress', exact: true }).click()
   await expect(page.getByText('All progress deleted')).toBeVisible()
 
   await page.goto('/#/dashboard')
@@ -87,8 +93,8 @@ test.describe('storage', () => {
 test.describe('quiz', () => {
   test('runs a question and reveals the explanation', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
 
     await expect(page.getByText('Question 1 of 10')).toBeVisible()
     const options = page.getByTestId('option')
@@ -99,38 +105,38 @@ test.describe('quiz', () => {
     // the bank that is multi.
     const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
     for (let k = 0; k < need; k++) await options.nth(k).click()
-    await page.getByRole('button', { name: 'Check answer' }).click()
+    await page.getByRole('button', { name: 'Check answer', exact: true }).click()
 
     // Either verdict is fine; what matters is that feedback appears.
-    await expect(page.getByText(/Correct|Not quite/)).toBeVisible()
-    await expect(page.getByRole('button', { name: /Next question|See results/ })).toBeVisible()
+    await expect(page.getByTestId('verdict')).toBeVisible()
+    await expect(page.getByRole('button', { name: /^(Next question|See results)$/ })).toBeVisible()
   })
 
   test('advances through questions and reports a score', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
 
     for (let i = 0; i < 10; i++) {
       // Multiple-response items state how many to pick; select that many.
       const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
       for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
-      await page.getByRole('button', { name: 'Check answer' }).click()
-      await page.getByRole('button', { name: /Next question|See results/ }).click()
+      await page.getByRole('button', { name: 'Check answer', exact: true }).click()
+      await page.getByRole('button', { name: /^(Next question|See results)$/ }).click()
     }
     await expect(page.getByText(/% correct/)).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Another quiz' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Another quiz', exact: true })).toBeVisible()
   })
 
   test('answers feed the dashboard accuracy figure', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
     // A multiple-response item will not submit until every key is picked, so
     // clicking one option would silently record nothing on 14% of the bank.
     const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
     for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
-    await page.getByRole('button', { name: 'Check answer' }).click()
+    await page.getByRole('button', { name: 'Check answer', exact: true }).click()
 
     await page.goto('/#/dashboard')
     await expect(page.getByText('1 of 279 answered')).toBeVisible()
@@ -138,7 +144,7 @@ test.describe('quiz', () => {
 
   test('keyboard keys A to D select an option', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
     await page.keyboard.press('c')
     const selected = page.getByTestId('option').nth(2)
     await expect(selected).toHaveClass(/border-\[var\(--color-accent\)\]/)
@@ -156,8 +162,8 @@ test.describe('flashcards', () => {
     await page.goto('/#/cards')
     const card = page.locator('main .card').first()
     await card.click()
-    await expect(page.getByRole('button', { name: 'Good' })).toBeVisible()
-    await page.getByRole('button', { name: 'Good' }).click()
+    await expect(page.getByRole('button', { name: /^Good/ })).toBeVisible()
+    await page.getByRole('button', { name: /^Good/ }).click()
     // A graded card leaves box 1, so the due count drops.
     await page.waitForTimeout(300)
     await expect(page.locator('main')).toContainText(/due/)
@@ -168,7 +174,7 @@ test.describe('flashcards', () => {
     const due = page.getByTestId('due-count')
     const before = Number(await due.innerText())
     await page.locator('main .card').first().click()
-    await page.getByRole('button', { name: 'Good' }).click()
+    await page.getByRole('button', { name: /^Good/ }).click()
     await page.waitForTimeout(400)
     expect(Number(await due.innerText())).toBe(before - 1)
   })
@@ -177,7 +183,7 @@ test.describe('flashcards', () => {
 test.describe('mock exam', () => {
   test('draws a paper to the blueprint and runs the clock', async ({ page }) => {
     await page.goto('/#/exam')
-    await page.getByRole('button', { name: 'Begin timed exam' }).click()
+    await page.getByRole('button', { name: 'Begin timed exam', exact: true }).click()
 
     await expect(page.getByTestId('exam-timer')).toBeVisible()
     await expect(page.getByTestId('exam-nav').locator('button')).toHaveCount(60)
@@ -190,15 +196,15 @@ test.describe('mock exam', () => {
 
   test('does not reveal the answer during the sitting', async ({ page }) => {
     await page.goto('/#/exam')
-    await page.getByRole('button', { name: 'Begin timed exam' }).click()
+    await page.getByRole('button', { name: 'Begin timed exam', exact: true }).click()
     await page.getByTestId('option').first().click()
-    await expect(page.getByText(/Correct|Not quite/)).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Check answer' })).toHaveCount(0)
+    await expect(page.getByTestId('verdict')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Check answer', exact: true })).toHaveCount(0)
   })
 
   test('resumes an interrupted sitting after a reload', async ({ page }) => {
     await page.goto('/#/exam')
-    await page.getByRole('button', { name: 'Begin timed exam' }).click()
+    await page.getByRole('button', { name: 'Begin timed exam', exact: true }).click()
     await page.getByTestId('option').first().click()
     await page.waitForTimeout(600)
 
@@ -209,7 +215,7 @@ test.describe('mock exam', () => {
 
   test('submitting produces a scaled score report', async ({ page }) => {
     await page.goto('/#/exam')
-    await page.getByRole('button', { name: 'Begin timed exam' }).click()
+    await page.getByRole('button', { name: 'Begin timed exam', exact: true }).click()
 
     // Answer a handful, then submit and accept the unanswered warning.
     for (let i = 0; i < 3; i++) {
@@ -217,7 +223,7 @@ test.describe('mock exam', () => {
       await page.getByRole('button', { name: 'Next →', exact: true }).click()
     }
     page.once('dialog', (d) => d.accept())
-    await page.getByRole('button', { name: 'Submit' }).click()
+    await page.getByRole('button', { name: 'Submit', exact: true }).click()
 
     await expect(page.getByTestId('scaled-score')).toBeVisible()
     const score = Number(await page.getByTestId('scaled-score').innerText())
@@ -228,9 +234,9 @@ test.describe('mock exam', () => {
 
   test('the finished attempt appears in the dashboard history', async ({ page }) => {
     await page.goto('/#/exam')
-    await page.getByRole('button', { name: 'Begin timed exam' }).click()
+    await page.getByRole('button', { name: 'Begin timed exam', exact: true }).click()
     page.once('dialog', (d) => d.accept())
-    await page.getByRole('button', { name: 'Submit' }).click()
+    await page.getByRole('button', { name: 'Submit', exact: true }).click()
     await expect(page.getByTestId('scaled-score')).toBeVisible()
 
     await page.goto('/#/dashboard')
@@ -317,22 +323,22 @@ test.describe('export and import', () => {
     page.on('dialog', (d) => d.accept())
 
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
     const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
     for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
-    await page.getByRole('button', { name: 'Check answer' }).click()
-    await expect(page.getByText(/Correct|Not quite/)).toBeVisible()
+    await page.getByRole('button', { name: 'Check answer', exact: true }).click()
+    await expect(page.getByTestId('verdict')).toBeVisible()
 
     await page.goto('/#/settings')
     const [download] = await Promise.all([
       page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Export database' }).click(),
+      page.getByRole('button', { name: 'Export database', exact: true }).click(),
     ])
     const file = await download.path()
     await expect(page.getByText(/Saved ccarf-progress-/)).toBeVisible()
 
-    await page.getByRole('button', { name: 'Delete all progress' }).click()
+    await page.getByRole('button', { name: 'Delete all progress', exact: true }).click()
     await expect(page.getByText('All progress deleted')).toBeVisible()
 
     await page.locator('input[type="file"]').setInputFiles(file)
@@ -345,8 +351,8 @@ test.describe('export and import', () => {
     // And the content is still attached: a quiz can still draw a question, which it
     // cannot do if content.questions went away with the old connection.
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
     await expect(page.getByText('Question 1 of 10')).toBeVisible()
     await expect(page.getByTestId('option')).toHaveCount(4)
   })
@@ -398,10 +404,10 @@ test.describe('flashcards are terms', () => {
 test.describe('flags', () => {
   test('a flag set during a quiz survives a reload and reaches Review', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByRole('button', { name: '10 questions' }).click()
-    await page.getByRole('button', { name: 'Start quiz' }).click()
-    await page.getByRole('button', { name: 'Flag' }).click()
-    await expect(page.getByRole('button', { name: 'Flagged' })).toBeVisible()
+    await page.getByRole('button', { name: '10 questions', exact: true }).click()
+    await page.getByRole('button', { name: 'Start quiz', exact: true }).click()
+    await page.getByRole('button', { name: 'Flag', exact: true }).click()
+    await expect(page.getByRole('button', { name: 'Flagged', exact: true })).toBeVisible()
 
     await page.reload()
     await page.goto('/#/review')
