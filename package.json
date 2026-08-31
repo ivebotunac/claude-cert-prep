@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Offline study app for the Claude Certified Architect - Foundations (CCAR-F) certification",
+  "description": "Study app for the Claude Certified Architect - Foundations (CCAR-F) certification",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

@@ -7,7 +7,7 @@
  *
  * Written on node:http rather than a static-server package so the dependency
  * list stays at the three the browser actually needs. Nothing here runs in the
- * browser, and the app is as offline once loaded as it is when run locally.
+ * browser, and once the page has loaded the app makes no further network calls.
  */
 
 import { readFile, stat } from 'node:fs/promises'
