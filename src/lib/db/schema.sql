@@ -5,8 +5,10 @@
 -- using a real database here is that "how did my accuracy in Domain 2 move over the
 -- last three weeks" is a query rather than a rewrite.
 --
--- Content (questions, flashcards, the blueprint) is NOT in here. It ships with the
--- app as JSON, is identical for every user, and would only go stale in a copy.
+-- This is progress only. The study content is a SEPARATE database, shipped with the
+-- build and ATTACHed read-only as `content` (see content-schema.sql and worker.js),
+-- so a query here can join a question to the answers given for it while export still
+-- serialises nothing but the learner's own history.
 
 PRAGMA foreign_keys = ON;
 

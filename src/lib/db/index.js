@@ -5,7 +5,13 @@
  * OPFS SyncAccessHandle API that persistent storage depends on is only exposed
  * there. This module is a thin promise-based RPC over postMessage.
  *
- * Nothing here talks to the network. The database never leaves the browser.
+ * Two databases, one connection. `main` is progress: personal, writable, and what
+ * export serialises. `content` is the study material, ATTACHed from a .sqlite3
+ * file that ships with the build and deserialised READONLY. Content queries are
+ * written against `content.*` and can join straight onto progress tables.
+ *
+ * The only fetch is the content image, from our own origin. Nothing is sent
+ * anywhere, and the progress database never leaves the browser.
  *
  * Three backends, tried in this order inside the worker:
  *
@@ -24,6 +30,9 @@
  */
 
 import schemaSql from './schema.sql?raw'
+// Vite emits the database as a build asset and hands back its URL, base path and
+// content hash included. The worker fetches it and attaches it read-only.
+import contentUrl from '$content/ccarf-content.sqlite3?url'
 
 /** Bump when schema.sql needs a migration, and add the migration in worker.js. */
 const SCHEMA_VERSION = 1
@@ -40,6 +49,8 @@ let nextId = 1
 let ready = null
 /** @type {Backend} */
 let currentBackend = 'memory'
+/** @type {Record<string, string>} */
+let currentContent = {}
 
 function spawn() {
   const w = new Worker(new URL('./worker.js', import.meta.url), { type: 'module' })
@@ -76,8 +87,15 @@ function send(type, payload, transfer) {
 /** Open the database once. Safe to call concurrently and repeatedly. */
 export function open() {
   if (!ready) {
-    ready = send('init', { schemaSql, schemaVersion: SCHEMA_VERSION }).then((info) => {
+    ready = send('init', {
+      schemaSql,
+      schemaVersion: SCHEMA_VERSION,
+      // Absolute, because the worker resolves a relative URL against its own
+      // module URL rather than the page.
+      contentUrl: new URL(contentUrl, location.href).href,
+    }).then((info) => {
       currentBackend = info.backend
+      currentContent = info.content ?? {}
       return info
     })
   }
@@ -151,6 +169,12 @@ export async function transaction(fn) {
 export async function backend() {
   await open()
   return currentBackend
+}
+
+/** The shipped content's own stamp: guide version, build date, size. */
+export async function contentInfo() {
+  await open()
+  return currentContent
 }
 
 /** True when progress survives a page reload. */

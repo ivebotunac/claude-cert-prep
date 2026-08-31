@@ -12,6 +12,16 @@
  *
  * The protocol is a minimal request/response over postMessage: every message
  * carries an id, and the client resolves the matching promise.
+ *
+ * TWO databases share this one connection:
+ *
+ *   main     progress. Personal, writable, and what export serialises.
+ *   content  the study material, ATTACHed from the shipped .sqlite3 image and
+ *            deserialised READONLY, so SQLite itself refuses a write to it.
+ *
+ * One connection rather than two, because that is what lets a single statement
+ * join a question to the answers given for it. sqlite3_js_db_export() serialises
+ * `main` alone, so the content never leaks into an exported progress file.
  */
 
 /// <reference lib="webworker" />
@@ -28,12 +38,15 @@ const POOL_NAME = 'ccarf-prep-pool'
 /** @type {any} */ let db
 /** @type {any} */ let pool
 /** @type {'opfs-sahpool' | 'kvvfs' | 'memory'} */ let backend = 'memory'
+/** Kept so the content can be re-attached after an import without a refetch. */
+/** @type {Uint8Array | null} */ let contentImage = null
 
 /**
  * @param {string} schemaSql
  * @param {number} schemaVersion
+ * @param {string} contentUrl
  */
-async function init(schemaSql, schemaVersion) {
+async function init(schemaSql, schemaVersion, contentUrl) {
   sqlite3 = await /** @type {any} */ (sqlite3InitModule)({
     print: () => {},
     printErr: (/** @type {string} */ msg) => {
@@ -70,7 +83,64 @@ async function init(schemaSql, schemaVersion) {
     db.exec(`PRAGMA user_version = ${schemaVersion}`)
   }
 
-  return { backend, version: schemaVersion }
+  const res = await fetch(contentUrl)
+  if (!res.ok) throw new Error(`could not load the study content: HTTP ${res.status}`)
+  contentImage = new Uint8Array(await res.arrayBuffer())
+  attachContent()
+
+  return { backend, version: schemaVersion, content: contentStamp() }
+}
+
+/** True when the content schema is on the current connection. */
+function contentAttached() {
+  let found = false
+  db.exec({
+    sql: 'PRAGMA database_list',
+    rowMode: 'object',
+    callback: (/** @type {any} */ row) => {
+      if (row.name === 'content') found = true
+    },
+  })
+  return found
+}
+
+/**
+ * Attach the shipped content image as a read-only in-memory schema.
+ *
+ * ATTACH ':memory:' creates an empty schema, and sqlite3_deserialize() then
+ * replaces its contents with the image. SQLITE_DESERIALIZE_READONLY is what makes
+ * a write to content.* fail with SQLITE_READONLY rather than merely being a rule
+ * nobody enforces. FREEONCLOSE hands the wasm allocation to SQLite to free.
+ *
+ * Called again after an import, because the OPFS path reopens the connection and
+ * an ATTACH does not survive that.
+ */
+function attachContent() {
+  if (!contentImage) throw new Error('content image not loaded')
+  if (contentAttached()) return
+
+  db.exec("ATTACH ':memory:' AS content")
+  const ptr = sqlite3.wasm.allocFromTypedArray(contentImage)
+  const rc = sqlite3.capi.sqlite3_deserialize(
+    db.pointer, 'content', ptr, contentImage.length, contentImage.length,
+    sqlite3.capi.SQLITE_DESERIALIZE_READONLY | sqlite3.capi.SQLITE_DESERIALIZE_FREEONCLOSE,
+  )
+  if (rc !== 0) throw new Error(`could not attach the study content: sqlite rc ${rc}`)
+}
+
+/** What the content says about itself, for the Settings panel. */
+function contentStamp() {
+  /** @type {Record<string, string>} */
+  const out = {}
+  db.exec({
+    sql: 'SELECT key, value FROM content.content_meta',
+    rowMode: 'object',
+    callback: (/** @type {any} */ row) => {
+      out[row.key] = row.value
+    },
+  })
+  out.bytes = String(contentImage?.length ?? 0)
+  return out
 }
 
 /** @param {string} sql @param {any} bind */
@@ -103,6 +173,8 @@ async function importBytes(bytes) {
     db.close()
     await pool.importDb('/' + DB_NAME, bytes)
     db = new pool.OpfsSAHPoolDb('/' + DB_NAME)
+    // A new connection carries no ATTACH, so the content has to go back on.
+    attachContent()
     return
   }
   // kvvfs and memory have no file to swap, so rebuild in place from the image.
@@ -149,7 +221,7 @@ async function importBytes(bytes) {
 
 /** @type {Record<string, (payload: any) => any>} */
 const handlers = {
-  init: ({ schemaSql, schemaVersion }) => init(schemaSql, schemaVersion),
+  init: ({ schemaSql, schemaVersion, contentUrl }) => init(schemaSql, schemaVersion, contentUrl),
   run: ({ sql, bind }) => void db.exec({ sql, bind }),
   all: ({ sql, bind }) => all(sql, bind),
   get: ({ sql, bind }) => all(sql, bind)[0] ?? null,

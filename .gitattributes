@@ -1,0 +1,6 @@
+# The study content is a SQLite database. Told that it is binary, git will not try
+# to merge it; told how to dump it, git will still show a readable diff.
+#
+# The textconv driver is per-clone, so run this once after cloning:
+#   git config diff.sqlite.textconv 'sqlite3 "$1" .dump'
+*.sqlite3 binary diff=sqlite

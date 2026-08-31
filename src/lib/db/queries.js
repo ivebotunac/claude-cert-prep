@@ -3,6 +3,11 @@
  *
  * Components call these functions and never touch `db` directly, so the schema
  * has exactly one consumer and a schema change has exactly one place to look.
+ *
+ * Unqualified table names are progress, in `main`. Anything prefixed `content.`
+ * is the read-only study material attached beside it, which is what lets the
+ * question selectors below decide what to show by joining the bank to the answers
+ * given for it, in one statement, rather than filtering an array afterwards.
  */
 
 import { all, get, run, value, transaction } from './index.js'
@@ -218,6 +223,83 @@ export async function weakestTasks(minAttempts = 3, limit = 8) {
       'FROM answers GROUP BY task HAVING attempts >= ? ORDER BY accuracy ASC, attempts DESC LIMIT ?',
     [minAttempts, limit],
   )
+}
+
+/* ------------------------------------------------------- question selection */
+
+/**
+ * The review and drill lists, as four id lists in one round trip.
+ *
+ * Each is a join from the question bank onto progress, so a list can never name a
+ * question that is not in the bank, and the ordering is the useful one rather
+ * than whatever order the bank happens to be in.
+ *
+ * @returns {Promise<{missed: string[], shaky: string[], flagged: string[], unseen: string[]}>}
+ */
+export async function questionSelection() {
+  const [missed, shaky, flagged, unseen] = await Promise.all([
+    // Most recent answer was wrong, worst-first by recency.
+    all(
+      'SELECT q.id FROM content.questions q JOIN question_stats s ON s.question_id = q.id ' +
+        'WHERE s.last_correct = 0 ORDER BY s.last_at DESC',
+    ),
+    // Answered both ways at different times: the real soft spots.
+    all(
+      'SELECT q.id FROM content.questions q JOIN question_stats s ON s.question_id = q.id ' +
+        'WHERE s.correct > 0 AND s.wrong > 0 ORDER BY s.wrong DESC, s.last_at DESC',
+    ),
+    all(
+      'SELECT q.id FROM content.questions q JOIN flags f ON f.question_id = q.id ' +
+        'ORDER BY f.flagged_at DESC',
+    ),
+    // Never attempted, in bank order.
+    all(
+      'SELECT q.id FROM content.questions q LEFT JOIN answers a ON a.question_id = q.id ' +
+        'WHERE a.question_id IS NULL ORDER BY q.id',
+    ),
+  ])
+  const ids = (/** @type {Record<string, any>[]} */ rows) => rows.map((r) => String(r.id))
+  return { missed: ids(missed), shaky: ids(shaky), flagged: ids(flagged), unseen: ids(unseen) }
+}
+
+/**
+ * What the learner actually picked, the last time they saw each question.
+ *
+ * `question_stats` carries tallies but not the chosen keys, so the review page
+ * could show which option was right and not which one was taken. This is that
+ * missing half.
+ *
+ * @returns {Promise<Map<string, {selected: string[], correct: boolean, at: number}>>}
+ */
+export async function lastSelections() {
+  const rows = await all(
+    'SELECT a.question_id, a.selected, a.is_correct, a.answered_at FROM answers a ' +
+      'JOIN (SELECT question_id, MAX(answered_at) AS latest FROM answers GROUP BY question_id) last ' +
+      'ON last.question_id = a.question_id AND last.latest = a.answered_at',
+  )
+  return new Map(
+    rows.map((r) => [
+      String(r.question_id),
+      {
+        selected: JSON.parse(r.selected),
+        correct: Number(r.is_correct) === 1,
+        at: Number(r.answered_at),
+      },
+    ]),
+  )
+}
+
+/**
+ * How many questions the bank holds, per scope, without shipping the rows.
+ * @returns {Promise<Record<string, number>>}
+ */
+export async function bankCounts() {
+  const rows = await all(
+    "SELECT domain AS k, COUNT(*) AS n FROM content.questions GROUP BY domain " +
+      "UNION ALL SELECT 'all', COUNT(*) FROM content.questions " +
+      "UNION ALL SELECT 'official', COUNT(*) FROM content.questions WHERE source = 'official'",
+  )
+  return Object.fromEntries(rows.map((r) => [String(r.k), Number(r.n)]))
 }
 
 /* ------------------------------------------------------------------ flags */

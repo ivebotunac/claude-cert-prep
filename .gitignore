@@ -16,6 +16,8 @@ blob-report/
 .idea/
 *.swp
 
-# Local progress exports, if anyone drops one in the repo root
-*.sqlite3
-*.db
+# Progress exports dropped in the repo root. Anchored to the root on purpose:
+# a bare *.sqlite3 would also exclude content/ccarf-content.sqlite3, which IS the
+# study content and has to be tracked.
+/*.sqlite3
+/*.db

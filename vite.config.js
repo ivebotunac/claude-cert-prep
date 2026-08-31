@@ -10,6 +10,9 @@ const base = process.env.BASE_PATH ?? '/'
 export default defineConfig({
   base,
   plugins: [svelte(), tailwindcss()],
+  // The content database is an asset, not something to parse. It is imported with
+  // ?url and fetched by the worker at boot.
+  assetsInclude: ['**/*.sqlite3'],
   resolve: {
     alias: {
       $lib: fileURLToPath(new URL('./src/lib', import.meta.url)),

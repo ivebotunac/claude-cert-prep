@@ -109,7 +109,11 @@ test.describe('quiz', () => {
     const options = page.getByTestId('option')
     await expect(options).toHaveCount(4)
 
-    await options.first().click()
+    // The draw is random, and a multiple-response item will not submit until all
+    // of its keys are picked. Clicking one option only would fail on the 14% of
+    // the bank that is multi.
+    const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
+    for (let k = 0; k < need; k++) await options.nth(k).click()
     await page.getByRole('button', { name: 'Check answer' }).click()
 
     // Either verdict is fine; what matters is that feedback appears.
@@ -310,5 +314,50 @@ test.describe('accessibility and layout', () => {
       const count = await page.locator('main h1').count()
       expect(count, `${view} should have one h1`).toBe(1)
     }
+  })
+})
+
+test.describe('export and import', () => {
+  // The content database is ATTACHed to the progress connection, and an ATTACH does
+  // not survive a reconnect. Importing on the OPFS backend closes and reopens that
+  // connection, so if the re-attach is ever dropped every content query starts
+  // failing with "no such table" the moment someone restores a backup. That is what
+  // this test is here to catch.
+  test('a restored backup keeps both the progress and the content', async ({ page }) => {
+    page.on('dialog', (d) => d.accept())
+
+    await page.goto('/#/quiz')
+    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: 'Start quiz' }).click()
+    const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
+    for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
+    await page.getByRole('button', { name: 'Check answer' }).click()
+    await expect(page.getByText(/Correct|Not quite/)).toBeVisible()
+
+    await page.goto('/#/settings')
+    const [download] = await Promise.all([
+      page.waitForEvent('download'),
+      page.getByRole('button', { name: 'Export database' }).click(),
+    ])
+    const file = await download.path()
+    await expect(page.getByText(/Saved ccarf-progress-/)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Delete all progress' }).click()
+    await expect(page.getByText('All progress deleted')).toBeVisible()
+
+    await page.locator('input[type="file"]').setInputFiles(file)
+    await expect(page.getByText(/Imported .*1 answers/)).toBeVisible()
+
+    // The progress came back.
+    await page.goto('/#/dashboard')
+    await expect(page.getByRole('heading', { name: 'Where you stand' })).toBeVisible()
+
+    // And the content is still attached: a quiz can still draw a question, which it
+    // cannot do if content.questions went away with the old connection.
+    await page.goto('/#/quiz')
+    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await expect(page.getByText('Question 1 of 10')).toBeVisible()
+    await expect(page.getByTestId('option')).toHaveCount(4)
   })
 })

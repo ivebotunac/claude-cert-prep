@@ -4,11 +4,16 @@
  * SQLite reads are async, and Svelte templates are not. So the app keeps a small
  * reactive snapshot in memory, writes go straight to the database, and the
  * relevant slice of the snapshot is refreshed afterwards. Nothing else caches.
+ *
+ * The review and drill lists are part of that snapshot. Which questions count as
+ * missed, shaky, flagged or unseen is decided by a join in SQL rather than by
+ * filtering an array here, and the ids it returns are what the lists below hand
+ * back as questions.
  */
 
 import * as q from '$lib/db/queries.js'
-import { backend, isPersistent, sizeBytes } from '$lib/db/index.js'
-import { tasks, flashcards, questions, domains, LEITNER_DAYS } from '$lib/content.js'
+import { backend, isPersistent, sizeBytes, contentInfo } from '$lib/db/index.js'
+import { loadContent, tasks, flashcards, questionById, domains, LEITNER_DAYS } from '$lib/content.js'
 import { DAY_MS, pct, today } from '$lib/util.js'
 
 class Progress {
@@ -20,16 +25,31 @@ class Progress {
   /** @type {Record<string, any>} */ byDomain = $state({})
   totals = $state({ answered: 0, correct: 0, accuracy: 0 })
 
+  /** Question ids per review scope, chosen in SQL. */
+  /** @type {{missed: string[], shaky: string[], flagged: string[], unseen: string[]}} */
+  selection = $state({ missed: [], shaky: [], flagged: [], unseen: [] })
+  /** What was picked the last time each question was seen. */
+  /** @type {Map<string, {selected: string[], correct: boolean, at: number}>} */
+  lastPicks = $state(new Map())
+
   ready = $state(false)
   storage = $state({ backend: 'memory', persistent: false, bytes: 0 })
+  /** @type {Record<string, string>} */
+  content = $state({})
   shuffleOptions = $state(true)
   theme = $state('system')
 
   async load() {
-    const [read, cards, answers, flags, attempts, byDomain, totals] = await Promise.all([
-      q.readTasks(), q.cardStates(), q.questionStats(), q.flaggedQuestions(),
-      q.attemptHistory(), q.domainStats(), q.answerTotals(),
-    ])
+    // The content database has to be read before anything that maps a question id
+    // back to a question, which is most of what follows.
+    await loadContent()
+
+    const [read, cards, answers, flags, attempts, byDomain, totals, selection, lastPicks] =
+      await Promise.all([
+        q.readTasks(), q.cardStates(), q.questionStats(), q.flaggedQuestions(),
+        q.attemptHistory(), q.domainStats(), q.answerTotals(),
+        q.questionSelection(), q.lastSelections(),
+      ])
     this.read = read
     this.cards = cards
     this.answers = answers
@@ -37,6 +57,8 @@ class Progress {
     this.attempts = attempts
     this.byDomain = byDomain
     this.totals = totals
+    this.selection = selection
+    this.lastPicks = lastPicks
 
     this.shuffleOptions = (await q.setting('shuffleOptions', '1')) === '1'
     this.theme = await q.setting('theme', 'system')
@@ -45,16 +67,20 @@ class Progress {
       persistent: await isPersistent(),
       bytes: await sizeBytes(),
     }
+    this.content = await contentInfo()
     this.ready = true
   }
 
   async refreshAnswers() {
-    const [answers, byDomain, totals] = await Promise.all([
+    const [answers, byDomain, totals, selection, lastPicks] = await Promise.all([
       q.questionStats(), q.domainStats(), q.answerTotals(),
+      q.questionSelection(), q.lastSelections(),
     ])
     this.answers = answers
     this.byDomain = byDomain
     this.totals = totals
+    this.selection = selection
+    this.lastPicks = lastPicks
   }
 
   /* ---------------------------------------------------------------- reading */
@@ -131,11 +157,13 @@ class Progress {
     const s = new Set(this.flags)
     next ? s.add(questionId) : s.delete(questionId)
     this.flags = s
+    this.selection = await q.questionSelection()
   }
 
   async clearFlags() {
     await q.clearFlags()
     this.flags = new Set()
+    this.selection = { ...this.selection, flagged: [] }
   }
 
   /* ---------------------------------------------------------------- settings */
@@ -195,25 +223,37 @@ class Progress {
     }
   }
 
+  /**
+   * The four review scopes. The choosing and the ordering happened in SQL; this
+   * only turns ids back into questions.
+   * @param {'missed' | 'shaky' | 'flagged' | 'unseen'} scope
+   */
+  scopedQuestions(scope) {
+    return this.selection[scope].map((id) => questionById[id]).filter(Boolean)
+  }
+
   /** Questions whose most recent answer was wrong. */
   missedQuestions() {
-    return questions.filter((q) => this.answers.get(q.id)?.lastCorrect === false)
+    return this.scopedQuestions('missed')
   }
 
   /** Answered both right and wrong at different times: the real soft spots. */
   shakyQuestions() {
-    return questions.filter((q) => {
-      const a = this.answers.get(q.id)
-      return a && a.correct > 0 && a.wrong > 0
-    })
+    return this.scopedQuestions('shaky')
   }
 
   flaggedQuestions() {
-    return questions.filter((q) => this.flags.has(q.id))
+    return this.scopedQuestions('flagged')
   }
 
   unseenQuestions() {
-    return questions.filter((q) => !this.answers.has(q.id))
+    return this.scopedQuestions('unseen')
+  }
+
+  /** What the learner picked last time, for a question they have seen. */
+  /** @param {string} questionId */
+  lastPick(questionId) {
+    return this.lastPicks.get(questionId) ?? null
   }
 
   /** What to do next, ordered by whichever signal is weakest. */
