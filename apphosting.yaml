@@ -1,0 +1,25 @@
+# Firebase App Hosting build and run settings.
+#
+# There is no framework adapter for Vite, so App Hosting uses the Node buildpack:
+# it runs `npm run build`, then whatever runCommand says. server.js serves dist/.
+
+runConfig:
+  cpu: 1
+  memoryMiB: 512
+  # Scales to zero when nobody is studying. maxInstances is a cost ceiling, not a
+  # capacity estimate: at 80 concurrent requests each, two is already far more
+  # than this app will ever need.
+  minInstances: 0
+  maxInstances: 2
+  concurrency: 80
+
+scripts:
+  runCommand: node server.js
+
+# Without this App Hosting prunes to what it thinks the framework needs, and it
+# does not know this app. dist/ is the build, server.js serves it.
+outputFiles:
+  serverApp:
+    include:
+      - dist
+      - server.js
