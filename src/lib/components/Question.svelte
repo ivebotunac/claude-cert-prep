@@ -77,80 +77,99 @@
 
 <svelte:window onkeydown={onKey} />
 
-<article class="mx-auto max-w-3xl">
-  <div class="mb-3.5 flex flex-wrap items-center gap-2">
-    <span
-      class="pill border-transparent"
-      style="background: {domain.color}22; color: {domain.color}"
-    >{question.domain} &middot; {domain.shortName}</span>
-    <span class="pill">Task {question.task}</span>
-    {#if question.source === 'official'}
-      <span class="pill border-transparent bg-[var(--color-clay-soft)] text-[var(--color-clay-text)]">
-        Official sample
+<article class="max-w-3xl">
+  <div class="mb-3 flex flex-wrap items-center gap-x-3 gap-y-2">
+    <span class="inline-flex items-center gap-2">
+      <span class="h-[7px] w-[7px] shrink-0" style="background: {domain.color}"></span>
+      <span class="font-mono text-[12.5px] text-[var(--color-ink-2)]">
+        {question.domain} &middot; {domain.shortName}
       </span>
+    </span>
+    <span class="font-mono text-[12.5px] text-[var(--color-ink-3)]">Task {question.task}</span>
+    {#if question.source === 'official'}
+      <span
+        class="border border-[var(--color-accent)] px-1.5 py-px font-mono text-[11.5px] tracking-[0.08em] text-[var(--color-accent)] uppercase"
+      >Official sample</span>
+    {/if}
+    {#if counter}
+      <span class="font-mono text-[12.5px] text-[var(--color-ink-3)]">{counter}</span>
     {/if}
     <div class="grow"></div>
-    {#if counter}<span class="text-xs text-[var(--color-ink-3)]">{counter}</span>{/if}
     <button
-      class="btn btn-ghost btn-sm"
+      class="inline-flex items-center gap-1.5 text-[13.5px] transition-colors
+        {flagged ? 'text-[var(--color-warn)]' : 'text-[var(--color-ink-3)] hover:text-[var(--color-ink)]'}"
       onclick={() => progress.toggleFlag(question.id)}
       aria-pressed={flagged}
     >
-      {flagged ? '⚑ Flagged' : '⚐ Flag'}
+      <svg width="12" height="12" viewBox="0 0 14 14" fill={flagged ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.2">
+        <path d="M3 1.5v11M3 2h7.5L9 4.6l1.5 2.6H3" />
+      </svg>
+      {flagged ? 'Flagged' : 'Flag'}
     </button>
   </div>
 
   {#if showScenario && scenario}
     <div
-      class="mb-4 rounded-r-lg border-l-[3px] border-[var(--color-line-strong)] bg-[var(--color-surface-2)] px-3.5 py-3 text-[13.5px] text-[var(--color-ink-2)]"
+      class="mb-4 border border-[var(--color-line)] border-l-2 bg-[var(--color-surface)] px-3.5 py-3"
+      style="border-left-color: {domain.color}"
     >
-      <b class="text-[var(--color-ink)]">{scenario.id} &middot; {scenario.title}.</b>
-      {@html richText(scenario.narrative)}
+      <div class="label">{scenario.id} &middot; {scenario.title}</div>
+      <p class="mt-1.5 text-[14px] leading-relaxed text-[var(--color-ink-2)]">
+        {@html richText(scenario.narrative)}
+      </p>
     </div>
   {/if}
 
-  <p class="text-[16px] leading-relaxed">{@html richText(question.stem)}</p>
-  <p class="mt-2 text-xs text-[var(--color-ink-3)]">
-    {multi ? `Select ${need}.` : 'Select one.'}
-    {#if !revealed}<span class="ml-1">Keys A to D work.</span>{/if}
+  <p class="text-[17px] leading-relaxed text-pretty">{@html richText(question.stem)}</p>
+  <p class="mt-2 font-mono text-[12.5px] text-[var(--color-ink-3)]">
+    {multi ? `Select ${need}` : 'Select one'}
+    {#if !revealed}<span class="ml-1">&middot; keys A to D work</span>{/if}
   </p>
 
-  <div class="my-5 flex flex-col gap-2">
+  <div class="my-4 flex flex-col gap-2">
     {#each view.options as opt (opt.key)}
       {@const isSel = selected.includes(opt.src)}
       {@const isKey = question.correct.includes(opt.src)}
+      {@const state = revealed ? (isKey ? 'key' : isSel ? 'picked' : 'plain') : isSel ? 'sel' : 'idle'}
       <button
         type="button"
         data-testid="option"
         disabled={revealed}
         onclick={() => toggle(opt.src)}
-        class="flex items-start gap-3 rounded-lg border-[1.5px] px-3.5 py-3 text-left leading-relaxed transition-colors
-          {revealed
-            ? isKey
-              ? 'border-[var(--color-ok)] bg-[var(--color-ok-soft)]'
-              : isSel
-                ? 'border-[var(--color-bad)] bg-[var(--color-bad-soft)]'
-                : 'border-[var(--color-line)] bg-[var(--color-surface)] opacity-75'
-            : isSel
-              ? 'border-[var(--color-clay)] bg-[var(--color-clay-soft)]'
-              : 'border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-line-strong)] hover:bg-[var(--color-surface-2)]'}"
+        class="flex items-start gap-3 border px-3.5 py-3 text-left transition-colors
+          {state === 'key'
+            ? 'border-[var(--color-ok)] bg-[var(--color-ok-soft)]'
+            : state === 'picked'
+              ? 'border-[var(--color-bad)] bg-[var(--color-bad-soft)]'
+              : state === 'plain'
+                ? 'border-[var(--color-line)] bg-[var(--color-surface)] opacity-75'
+                : state === 'sel'
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)]'
+                  : 'border-[var(--color-line)] bg-[var(--color-surface)] hover:border-[var(--color-ink-3)]'}"
       >
         <span
-          class="mt-px grid h-[21px] w-[21px] shrink-0 place-items-center rounded-[5px] border font-mono text-[12.5px] font-semibold
-            {revealed && isKey
+          class="mt-px grid h-[21px] w-[21px] shrink-0 place-items-center border font-mono text-[13.5px] font-medium
+            {state === 'key'
               ? 'border-[var(--color-ok)] bg-[var(--color-ok)] text-white'
-              : revealed && isSel
+              : state === 'picked'
                 ? 'border-[var(--color-bad)] bg-[var(--color-bad)] text-white'
-                : isSel
-                  ? 'border-[var(--color-clay)] bg-[var(--color-clay)] text-white'
-                  : 'border-[var(--color-line)] bg-[var(--color-surface-2)]'}"
+                : state === 'sel'
+                  ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
+                  : 'border-[var(--color-line)] bg-[var(--color-surface-2)] text-[var(--color-ink)]'}"
         >{opt.key}</span>
-        <span class="min-w-0">
-          {@html richText(opt.text)}
+        <span class="min-w-0 grow">
+          <span class="flex items-baseline gap-3">
+            <span class="min-w-0 grow text-[15.5px] leading-relaxed">{@html richText(opt.text)}</span>
+            {#if state === 'key'}
+              <span class="shrink-0 font-mono text-[11.5px] tracking-[0.08em] text-[var(--color-ok)] uppercase">key</span>
+            {:else if state === 'picked'}
+              <span class="shrink-0 font-mono text-[11.5px] tracking-[0.08em] text-[var(--color-bad)] uppercase">you picked</span>
+            {/if}
+          </span>
           {#if revealed && !isKey && question.why?.[opt.src]}
-            <span class="mt-1.5 block text-[12.8px] italic text-[var(--color-ink-2)]">
-              {@html richText(question.why[opt.src])}
-            </span>
+            <span
+              class="mt-2 block border-l-2 border-[var(--color-line)] pl-2.5 text-[13.5px] leading-relaxed text-[var(--color-ink-2)]"
+            >{@html richText(question.why[opt.src])}</span>
           {/if}
         </span>
       </button>
@@ -159,24 +178,22 @@
 
   {#if revealed}
     <div
-      class="my-4 rounded-lg px-4 py-3.5 {correct
-        ? 'bg-[var(--color-ok-soft)]'
-        : 'bg-[var(--color-bad-soft)]'}"
+      class="my-4 border border-[var(--color-line)] border-l-2 bg-[var(--color-surface)] px-4 py-3.5"
+      style="border-left-color: {correct ? 'var(--color-ok)' : 'var(--color-bad)'}"
     >
-      <p class="mb-1.5 font-semibold">
-        {#if correct}
-          Correct
-        {:else if selected.length}
-          Not quite. The answer is {shownKey}.
-        {:else}
-          Answer: {shownKey}
+      <p class="flex flex-wrap items-baseline gap-x-2.5 text-[14px]">
+        <span class="font-semibold" style="color: {correct ? 'var(--color-ok)' : 'var(--color-bad)'}">
+          {correct ? 'Correct.' : selected.length ? 'Not quite.' : 'Unanswered.'}
+        </span>
+        {#if !correct}
+          <span class="text-[var(--color-ink-2)]">The key was {shownKey}.</span>
         {/if}
       </p>
-      <p class="text-[14.5px] leading-relaxed">{@html richText(question.explanation)}</p>
+      <p class="mt-2 text-[15px] leading-relaxed text-pretty">{@html richText(question.explanation)}</p>
     </div>
   {/if}
 
-  <div class="mt-5 flex flex-wrap items-center gap-2.5">
+  <div class="mt-4 flex flex-wrap items-center gap-2.5">
     {#if footer}
       {@render footer()}
     {/if}

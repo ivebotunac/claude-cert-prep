@@ -37,7 +37,6 @@ class Progress {
   /** @type {Record<string, string>} */
   content = $state({})
   shuffleOptions = $state(true)
-  theme = $state('system')
 
   async load() {
     // The content database has to be read before anything that maps a question id
@@ -61,7 +60,6 @@ class Progress {
     this.lastPicks = lastPicks
 
     this.shuffleOptions = (await q.setting('shuffleOptions', '1')) === '1'
-    this.theme = await q.setting('theme', 'system')
     this.storage = {
       backend: await backend(),
       persistent: await isPersistent(),
@@ -172,13 +170,6 @@ class Progress {
   async setShuffle(value) {
     this.shuffleOptions = value
     await q.setSetting('shuffleOptions', value ? '1' : '0')
-  }
-
-  /** @param {string} value */
-  async setTheme(value) {
-    this.theme = value
-    await q.setSetting('theme', value)
-    applyTheme(value)
   }
 
   /* ---------------------------------------------------------------- derived */
@@ -313,15 +304,6 @@ class Progress {
     }
     return out
   }
-}
-
-/** @param {string} pref */
-export function applyTheme(pref) {
-  const dark =
-    pref === 'dark' ||
-    (pref === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
-  document.documentElement.classList.toggle('dark', dark)
-  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
 }
 
 export const progress = new Progress()

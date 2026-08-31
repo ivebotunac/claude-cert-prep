@@ -85,8 +85,8 @@
 
 <svelte:window onkeydown={onKey} />
 
-<h1 class="mb-1.5 text-[27px] font-semibold">Flashcards</h1>
-<p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
+<h1 class="text-[24px] font-semibold">Flashcards</h1>
+<p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)] text-pretty">
   Six Leitner boxes. Good moves a card up a box, Hard holds it where it is, Again drops it back to
   box 1. Space reveals and grades as Good, keys 1, 2 and 3 grade directly.
 </p>
@@ -100,17 +100,17 @@
       {/each}
     </select>
     <div class="grow"></div>
-    <span class="text-xs text-[var(--color-ink-3)]">
+    <span class="text-[12.5px] text-[var(--color-ink-3)]">
       {reviewed} reviewed{lapsed ? `, ${lapsed} back to box 1` : ''}
     </span>
   </div>
 
   {#if current}
     <div class="mb-3 flex items-center gap-3">
-      <span class="shrink-0 text-xs text-[var(--color-ink-3)]">
+      <span class="shrink-0 text-[12.5px] text-[var(--color-ink-3)]">
         {index + 1} of {queue.length}{cramming ? ' · cram' : ''}
       </span>
-      <Meter value={pct(index, queue.length)} tone="clay" height="h-1" />
+      <Meter value={pct(index, queue.length)} tone="accent" height="h-1" />
     </div>
 
     {#snippet face(/** @type {any} */ card)}
@@ -122,7 +122,7 @@
         <span class="pill">{card.task === 'meta' ? 'Exam mechanics' : `Task ${card.task}`}</span>
         <span class="pill">Box {currentBox + 1}</span>
       </div>
-      <p class="mt-6 text-center font-serif text-[20px] leading-snug">
+      <p class="mt-6 text-center font-mono text-[24px] leading-snug">
         {@html richText(card.front)}
       </p>
     {/snippet}
@@ -135,7 +135,7 @@
       >
         {@render face(current)}
         <div class="grow"></div>
-        <span class="mt-6 text-center text-xs text-[var(--color-ink-3)]">
+        <span class="mt-6 text-center text-[12.5px] text-[var(--color-ink-3)]">
           Click to reveal, or press space
         </span>
       </button>
@@ -143,7 +143,7 @@
       <div class="card flex min-h-[15rem] flex-col p-6">
         {@render face(current)}
         <hr class="my-5 border-0 border-t border-[var(--color-line)]" />
-        <div class="mx-auto max-w-[58ch] text-[15px] leading-relaxed">
+        <div class="mx-auto max-w-[58ch] text-[17px] leading-relaxed">
           {@html richText(current.back)}
         </div>
         <div class="grow"></div>
@@ -152,16 +152,16 @@
             class="btn grow basis-[6.5rem] justify-center border-[var(--color-bad)] text-[var(--color-bad)] hover:bg-[var(--color-bad-soft)]"
             onclick={() => grade('again')}
           >
-            Again <span class="text-[11px] opacity-60">1</span>
+            Again <span class="text-[12.5px] opacity-60">1</span>
           </button>
           <button class="btn grow basis-[6.5rem] justify-center" onclick={() => grade('hard')}>
-            Hard <span class="text-[11px] opacity-60">2</span>
+            Hard <span class="text-[12.5px] opacity-60">2</span>
           </button>
           <button
             class="btn btn-primary grow basis-[6.5rem] justify-center"
             onclick={() => grade('good')}
           >
-            Good <span class="text-[11px] opacity-70">3</span>
+            Good <span class="text-[12.5px] opacity-70">3</span>
           </button>
         </div>
       </div>
@@ -186,30 +186,30 @@
   {/if}
 </div>
 
-<h2 class="mb-3 mt-9 text-lg font-semibold">Leitner boxes</h2>
+<h2 class="section mt-6 mb-2.5">Leitner boxes</h2>
 <div class="grid grid-cols-3 gap-2 sm:grid-cols-6">
   {#each summary.boxes as n, i}
     <div
       class="card px-2 py-2.5 text-center {currentBox === i
-        ? 'border-[var(--color-clay)]'
+        ? 'border-[var(--color-accent)]'
         : ''}"
     >
-      <div class="font-serif text-xl font-semibold {n ? '' : 'text-[var(--color-ink-3)]'}">{n}</div>
+      <div class="font-mono text-[20px] font-semibold {n ? '' : 'text-[var(--color-ink-3)]'}">{n}</div>
       <div
-        class="mt-0.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--color-ink-3)]"
+        class="mt-0.5 text-[12.5px] font-semibold uppercase tracking-[0.07em] text-[var(--color-ink-3)]"
       >
         Box {i + 1}
       </div>
-      <div class="text-[11px] text-[var(--color-ink-3)]">
+      <div class="text-[12.5px] text-[var(--color-ink-3)]">
         {LEITNER_DAYS[i] === 0 ? 'today' : `${LEITNER_DAYS[i]} days`}
       </div>
     </div>
   {/each}
 </div>
-<p class="mt-3 text-sm text-[var(--color-ink-2)]">
+<p class="mt-3 text-[14px] text-[var(--color-ink-2)]">
   {summary.due} due, {summary.learned} learned, {summary.total} total in this filter.
 </p>
-<p class="mt-1 text-xs text-[var(--color-ink-3)]">
+<p class="mt-1 text-[12.5px] text-[var(--color-ink-3)]">
   Box 1 comes back the same day, then a card you keep getting right returns after 1, 3, 7, 21 and
   finally 60 days.
 </p>

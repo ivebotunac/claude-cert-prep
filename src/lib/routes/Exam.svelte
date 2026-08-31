@@ -149,8 +149,8 @@
 <svelte:window onkeydown={onKey} />
 
 {#if !attempt}
-  <h1 class="mb-1.5 text-[27px] font-semibold">Mock exam</h1>
-  <p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
+  <h1 class="text-[24px] font-semibold">Mock exam</h1>
+  <p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)] text-pretty">
     A full simulation: {meta.items} items in {meta.timeLimitMinutes} minutes,
     {meta.scenariosPresented} scenarios drawn at random from {meta.scenarioBankSize}, items sampled
     to the real domain weights, grouped by scenario so each narrative is read once. No feedback until
@@ -158,7 +158,7 @@
   </p>
 
   <div class="card max-w-xl p-5">
-    <table class="w-full text-sm">
+    <table class="w-full text-[14px]">
       <tbody>
         <tr class="border-b border-[var(--color-line)]">
           <td class="py-1.5">Items</td>
@@ -180,14 +180,14 @@
         </tr>
         {#each domains as d (d.id)}
           <tr class="border-b border-[var(--color-line)] text-[var(--color-ink-2)]">
-            <td class="py-1 text-xs">{d.id} {d.shortName}</td>
-            <td class="py-1 text-right font-mono text-xs">{examBlueprint[d.id]} items</td>
+            <td class="py-1 text-[12.5px]">{d.id} {d.shortName}</td>
+            <td class="py-1 text-right font-mono text-[12.5px]">{examBlueprint[d.id]} items</td>
           </tr>
         {/each}
       </tbody>
     </table>
 
-    <p class="my-4 text-xs text-[var(--color-ink-3)]">
+    <p class="my-4 text-[12.5px] text-[var(--color-ink-3)]">
       Progress is saved to the local database as you go, so closing the tab does not lose the
       attempt. The clock keeps running, so treat it as a real sitting.
     </p>
@@ -197,7 +197,7 @@
     </button>
   </div>
 
-  <p class="mt-5 text-xs text-[var(--color-ink-3)]">
+  <p class="mt-5 text-[12.5px] text-[var(--color-ink-3)]">
     The bank holds {questions.length} questions. With {meta.items} drawn per attempt, repeat sittings
     overlap; the draw is random each time.
   </p>
@@ -206,18 +206,18 @@
     class="no-print card sticky top-[3.6rem] z-10 mb-5 flex flex-wrap items-center gap-3 px-4 py-2.5"
   >
     <span
-      class="font-mono text-[17px] font-semibold {remaining < 600_000
+      class="font-mono text-[19px] font-semibold {remaining < 600_000
         ? 'text-[var(--color-bad)]'
         : ''}"
       data-testid="exam-timer"
     >
       {formatClock(remaining)}
     </span>
-    <span class="text-xs text-[var(--color-ink-3)]">
+    <span class="text-[12.5px] text-[var(--color-ink-3)]">
       Item {attempt.cursor + 1} of {attempt.questionIds.length}
     </span>
     <div class="grow"></div>
-    <span class="text-xs text-[var(--color-ink-3)]" data-testid="exam-progress">
+    <span class="text-[12.5px] text-[var(--color-ink-3)]" data-testid="exam-progress">
       {answeredCount} answered &middot; {flaggedCount} flagged
     </span>
     <button class="btn btn-sm" onclick={() => goTo(attempt.cursor - 1)} aria-label="Previous item">
@@ -262,9 +262,9 @@
     <div class="flex flex-wrap gap-1" data-testid="exam-nav">
       {#each attempt.questionIds as id, i (id)}
         <button
-          class="h-7 w-7 rounded-md border font-mono text-xs transition-colors
+          class="h-7 w-7 border font-mono text-[12.5px] transition-colors
             {i === attempt.cursor
-              ? 'border-[var(--color-clay)] bg-[var(--color-clay)] text-white'
+              ? 'border-[var(--color-accent)] bg-[var(--color-accent)] text-white'
               : progress.flags.has(id)
                 ? 'border-[var(--color-warn)] text-[var(--color-warn)]'
                 : answers.has(id)

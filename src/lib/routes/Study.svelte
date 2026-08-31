@@ -42,8 +42,8 @@
 </script>
 
 {#if !domainId}
-  <h1 class="mb-1.5 text-[27px] font-semibold">Study the blueprint</h1>
-  <p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
+  <h1 class="text-[24px] font-semibold">Study the blueprint</h1>
+  <p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)] text-pretty">
     Every question on the exam traces back to one of {tasks.length} task statements. Read a domain,
     tick each objective off as it lands, then drill it. The wording here follows the guide,
     version {meta.guideVersion}.
@@ -53,7 +53,7 @@
     <div class="mb-2.5 flex flex-wrap items-baseline gap-x-3 gap-y-1">
       <span class="label">Objectives read</span>
       <span class="grow"></span>
-      <span class="font-mono text-sm text-[var(--color-ink-2)]">
+      <span class="font-mono text-[14px] text-[var(--color-ink-2)]">
         {reading.done}/{reading.total}
       </span>
       <span class="pill">{reading.pct}%</span>
@@ -61,7 +61,7 @@
     <Meter value={reading.pct} />
   </div>
 
-  <h2 class="mb-3 text-lg font-semibold">The five domains</h2>
+  <h2 class="section mb-2.5">The five domains</h2>
   <div class="grid gap-3.5 sm:grid-cols-2">
     {#each domains as d (d.id)}
       {@const p = progress.domainProgress(d.id)}
@@ -72,19 +72,19 @@
         <div class="flex items-center gap-3">
           <DomainBadge id={d.id} />
           <div class="min-w-0 grow">
-            <div class="text-[14.5px] font-medium text-[var(--color-ink)]">{d.name}</div>
-            <div class="text-xs text-[var(--color-ink-3)]">
+            <div class="text-[16.5px] font-medium text-[var(--color-ink)]">{d.name}</div>
+            <div class="text-[12.5px] text-[var(--color-ink-3)]">
               {d.weight}% of the exam &middot; ~{d.expectedItems} items
             </div>
           </div>
         </div>
 
-        <p class="my-3 grow text-[13.5px] leading-relaxed text-[var(--color-ink-2)]">
+        <p class="my-3 grow text-[15.5px] leading-relaxed text-[var(--color-ink-2)]">
           {@html richText(d.blurb)}
         </p>
 
         <div class="mb-2 flex flex-wrap items-center gap-2">
-          <span class="text-xs text-[var(--color-ink-3)]">
+          <span class="text-[12.5px] text-[var(--color-ink-3)]">
             {p.read} of {p.readTotal} objectives read
           </span>
           <span class="grow"></span>
@@ -99,8 +99,8 @@
     {/each}
   </div>
 
-  <h2 class="mb-1.5 mt-9 text-lg font-semibold">The six scenarios</h2>
-  <p class="mb-3 max-w-[68ch] text-sm text-[var(--color-ink-2)]">
+  <h2 class="section mt-6 mb-1.5">The six scenarios</h2>
+  <p class="mb-2.5 max-w-[76ch] text-[14px] text-[var(--color-ink-2)] text-pretty">
     {meta.scenariosPresented} of these {meta.scenarioBankSize} are drawn for any one sitting, and
     the items hang off them. Knowing the setup before you read a stem saves a minute every time.
   </p>
@@ -108,8 +108,8 @@
     {#each scenarios as s (s.id)}
       <div class="card p-5">
         <div class="mb-2 flex flex-wrap items-center gap-2">
-          <span class="font-mono text-[13px] font-semibold text-[var(--color-clay-text)]">{s.id}</span>
-          <h3 class="text-[15px] font-semibold">{s.title}</h3>
+          <span class="font-mono text-[15px] font-semibold text-[var(--color-accent)]">{s.id}</span>
+          <h3 class="text-[17px] font-semibold">{s.title}</h3>
           <span class="grow"></span>
           {#each s.primaryDomains as id (id)}
             {@const d = domainById[id]}
@@ -120,11 +120,11 @@
             >{id} &middot; {d.shortName}</span>
           {/each}
         </div>
-        <p class="text-[14px] leading-relaxed text-[var(--color-ink-2)]">
+        <p class="text-[16px] leading-relaxed text-[var(--color-ink-2)]">
           {@html richText(s.narrative)}
         </p>
         <ul
-          class="mt-3 flex list-disc flex-col gap-1 pl-[1.15rem] text-[13px] leading-relaxed text-[var(--color-ink-3)] marker:text-[var(--color-line-strong)]"
+          class="mt-3 flex list-disc flex-col gap-1 pl-[1.15rem] text-[15px] leading-relaxed text-[var(--color-ink-3)] marker:text-[var(--color-line-strong)]"
         >
           {#each s.keyProps as prop}
             <li>{@html richText(prop)}</li>
@@ -143,7 +143,7 @@
 {:else}
   <a
     href="#/study"
-    class="mb-4 inline-flex items-center gap-1.5 text-[13px] text-[var(--color-ink-2)] no-underline hover:text-[var(--color-ink)]"
+    class="mb-4 inline-flex items-center gap-1.5 text-[15px] text-[var(--color-ink-2)] no-underline hover:text-[var(--color-ink)]"
   >
     <span aria-hidden="true">&larr;</span> All domains
   </a>
@@ -152,7 +152,7 @@
     <DomainBadge id={domain.id} />
     <div class="min-w-0">
       <h1 class="text-[24px] font-semibold leading-tight">{domain.name}</h1>
-      <div class="mt-0.5 text-xs text-[var(--color-ink-3)]">
+      <div class="mt-0.5 text-[12.5px] text-[var(--color-ink-3)]">
         {domain.weight}% of the exam &middot; ~{domain.expectedItems} items &middot;
         {list.length} task statements
       </div>
@@ -172,7 +172,7 @@
     <div class="card mb-6 p-5">
       <div class="mb-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
         <span class="label">Read in this domain</span>
-        <span class="font-mono text-sm text-[var(--color-ink-2)]">
+        <span class="font-mono text-[14px] text-[var(--color-ink-2)]">
           {dp.read}/{dp.readTotal}
         </span>
         <span class="grow"></span>
@@ -184,12 +184,12 @@
     </div>
   {/if}
 
-  <div class="flex flex-col gap-2.5">
+  <div class="card rows">
     {#each list as t (t.id)}
       {@const isRead = progress.read.has(t.id)}
       {@const isOpen = open.has(t.id)}
       {@const n = bank(t.id)}
-      <div class="card overflow-hidden">
+      <div>
         <div
           class="flex items-start gap-3 px-4 py-3.5 sm:px-5 {isRead
             ? 'bg-[var(--color-ok-soft)]'
@@ -197,7 +197,7 @@
         >
           <button
             type="button"
-            class="mt-0.5 grid h-[21px] w-[21px] shrink-0 place-items-center rounded-[6px] border transition-colors
+            class="mt-0.5 grid h-[21px] w-[21px] shrink-0 place-items-center border transition-colors
               {isRead
                 ? 'border-[var(--color-ok)] bg-[var(--color-ok)] text-white'
                 : 'border-[var(--color-line-strong)] bg-[var(--color-surface)] hover:border-[var(--color-ink-3)]'}"
@@ -227,10 +227,10 @@
             onclick={() => toggleOpen(t.id)}
           >
             <div class="flex items-start gap-2">
-              <span class="mt-px font-mono text-[13px] font-semibold text-[var(--color-clay-text)]">
+              <span class="mt-px font-mono text-[15px] font-semibold text-[var(--color-accent)]">
                 {t.id}
               </span>
-              <span class="min-w-0 grow text-[14.5px] font-medium leading-snug">
+              <span class="min-w-0 grow text-[16.5px] font-medium leading-snug">
                 {@html richText(t.title)}
               </span>
               <svg
@@ -250,7 +250,7 @@
                 />
               </svg>
             </div>
-            <p class="mt-1 text-[13px] italic leading-relaxed text-[var(--color-ink-2)]">
+            <p class="mt-1 text-[15px] italic leading-relaxed text-[var(--color-ink-2)]">
               {@html richText(t.keyIdea)}
             </p>
           </button>
@@ -262,7 +262,7 @@
               <div>
                 <h3 class="label mb-2">Knowledge of</h3>
                 <ul
-                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[13.5px] leading-relaxed text-[var(--color-ink-2)] marker:text-[var(--color-line-strong)]"
+                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[15.5px] leading-relaxed text-[var(--color-ink-2)] marker:text-[var(--color-line-strong)]"
                 >
                   {#each t.knowledge as k}
                     <li>{@html richText(k)}</li>
@@ -272,7 +272,7 @@
               <div>
                 <h3 class="label mb-2">Skills in</h3>
                 <ul
-                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[13.5px] leading-relaxed text-[var(--color-ink-2)] marker:text-[var(--color-line-strong)]"
+                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[15.5px] leading-relaxed text-[var(--color-ink-2)] marker:text-[var(--color-line-strong)]"
                 >
                   {#each t.skills as s}
                     <li>{@html richText(s)}</li>
@@ -282,10 +282,10 @@
             </div>
 
             {#if t.traps?.length}
-              <div class="mt-5 rounded-lg bg-[var(--color-warn-soft)] px-4 py-3.5">
+              <div class="mt-5 bg-[var(--color-warn-soft)] px-4 py-3.5">
                 <h3 class="label mb-2 text-[var(--color-warn)]">Traps</h3>
                 <ul
-                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[13.5px] leading-relaxed marker:text-[var(--color-warn)]"
+                  class="flex list-disc flex-col gap-2 pl-[1.15rem] text-[15.5px] leading-relaxed marker:text-[var(--color-warn)]"
                 >
                   {#each t.traps as trap}
                     <li>{@html richText(trap)}</li>
@@ -297,11 +297,11 @@
             <div class="mt-4 flex flex-wrap items-center gap-2.5">
               {#if n}
                 <a class="btn btn-sm" href="#/quiz?task={t.id}">Drill task {t.id}</a>
-                <span class="text-xs text-[var(--color-ink-3)]">
+                <span class="text-[12.5px] text-[var(--color-ink-3)]">
                   {n} question{n === 1 ? '' : 's'} in the bank
                 </span>
               {:else}
-                <span class="text-xs text-[var(--color-ink-3)]">
+                <span class="text-[12.5px] text-[var(--color-ink-3)]">
                   No questions written for this task yet.
                 </span>
               {/if}

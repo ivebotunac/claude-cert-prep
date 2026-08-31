@@ -1,16 +1,23 @@
 <script>
-  /** @type {{ value: string | number, label: string, sub?: string, tone?: string }} */
-  let { value, label, sub = '', tone = 'var(--color-ink)' } = $props()
+  /**
+   * A metric tile. The caption comes first and the figure second, so a column of
+   * these reads as a table of measurements rather than as a row of scoreboards.
+   * @type {{ value: string | number, label: string, sub?: string, tone?: string, meter?: number | null }}
+   */
+  let { value, label, sub = '', tone = 'var(--color-ink)', meter = null } = $props()
 </script>
 
-<div class="card p-4">
-  <div class="font-serif text-[1.9rem] leading-none font-semibold" style="color: {tone}">
+<div class="bg-[var(--color-surface)] px-4 py-3.5">
+  <div class="label">{label}</div>
+  <div class="mt-2 font-mono text-[30px] leading-none font-medium tracking-[-0.02em]" style="color: {tone}">
     {@html value}
   </div>
-  <div class="mt-1.5 text-[11px] font-semibold uppercase tracking-[0.07em] text-[var(--color-ink-3)]">
-    {label}
-  </div>
+  {#if meter !== null}
+    <div class="mt-2.5 h-1 w-full overflow-hidden bg-[var(--color-line-soft)]">
+      <div class="h-full bg-[var(--color-ink)]" style="width: {Math.max(0, Math.min(100, meter))}%"></div>
+    </div>
+  {/if}
   {#if sub}
-    <div class="mt-1 text-xs text-[var(--color-ink-2)]">{sub}</div>
+    <div class="mt-2 text-[13.5px] text-[var(--color-ink-3)]">{sub}</div>
   {/if}
 </div>

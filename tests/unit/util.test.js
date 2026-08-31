@@ -210,3 +210,23 @@ describe('formatters', () => {
     expect(formatBytes(3 * 1024 * 1024)).toBe('3.0 MB')
   })
 })
+
+describe('richText, hyphenated words', () => {
+  it('does not mistake the tail of a hyphenated word for a CLI flag', () => {
+    expect(richText('high-ambiguity requests')).toBe('high-ambiguity requests')
+    expect(richText('first-contact resolution')).toBe('first-contact resolution')
+    expect(richText('It re-litigates the request')).toBe('It re-litigates the request')
+  })
+
+  it('still marks a real flag', () => {
+    expect(richText('run with --verbose')).toBe('run with <code>--verbose</code>')
+    expect(richText('use --output-format json')).toBe('use <code>--output-format</code> json')
+  })
+
+  it('leaves one-letter flags to backticks', () => {
+    // The pattern needs two characters after the dash, so -p on its own is not
+    // marked. Authors write `-p` in the content when they want it as code.
+    expect(richText('the -p flag')).toBe('the -p flag')
+    expect(richText('the `-p` flag')).toBe('the <code>-p</code> flag')
+  })
+})

@@ -1,10 +1,10 @@
 <script>
-  /** @type {{ value: number, tone?: 'auto' | 'clay' | 'ok' | 'warn' | 'bad', height?: string }} */
-  let { value = 0, tone = 'auto', height = 'h-1.5' } = $props()
+  /** @type {{ value: number, tone?: 'auto' | 'accent' | 'ok' | 'warn' | 'bad', height?: string }} */
+  let { value = 0, tone = 'auto', height = 'h-1' } = $props()
 
   const colour = $derived(
     tone !== 'auto'
-      ? `var(--color-${tone === 'clay' ? 'clay' : tone})`
+      ? `var(--color-${tone})`
       : value >= 75
         ? 'var(--color-ok)'
         : value >= 45
@@ -15,9 +15,9 @@
   )
 </script>
 
-<div class="{height} w-full overflow-hidden rounded-full bg-[var(--color-surface-2)]">
+<div class="{height} w-full overflow-hidden bg-[var(--color-line-soft)]">
   <div
-    class="h-full rounded-full transition-[width] duration-300"
+    class="h-full transition-[width] duration-300"
     style="width: {Math.max(0, Math.min(100, value))}%; background: {colour}"
   ></div>
 </div>

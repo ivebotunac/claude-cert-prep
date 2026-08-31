@@ -3,8 +3,8 @@
 An offline study app for the **Claude Certified Architect – Foundations** exam (CCAR-F).
 
 Svelte 5, Vite, Tailwind v4, and two real SQLite databases running in the browser. No
-server, no accounts, no network calls beyond loading the app itself. Your progress is a
-SQLite file that never leaves your machine, and you can export it.
+server, no accounts, no network calls at all: even the two typefaces are bundled. Your
+progress is a SQLite file that never leaves your machine, and you can export it.
 
 **279 practice questions** (12 of them the official samples, verbatim), **140 flashcards**
 on a Leitner schedule, all **30 task statements** from the official blueprint as study
@@ -47,7 +47,7 @@ content/
   ccarf-content.sqlite3   the study material, and the source of truth for it
 src/
   App.svelte              shell, route table, boot and error states
-  app.css                 Tailwind v4 theme tokens, light and dark
+  app.css                 Tailwind v4 theme tokens, and the self-hosted faces
   lib/
     content.js            reads the content database into the shapes views render
     router.svelte.js      hash router, about forty lines
@@ -138,7 +138,7 @@ FROM answers GROUP BY domain ORDER BY accuracy;
   credential family, partner tiers, and the distractor patterns worth memorising.
 - **Resources**: the official prep plan and exercises, reading list, in-scope and
   out-of-scope lists, policies.
-- **Settings**: theme, option shuffling, storage backend, export, import, reset.
+- **Settings**: option shuffling, storage backend, content stamp, export, import, reset.
 
 ## Editing the content
 
@@ -177,6 +177,21 @@ Answer position is guarded twice: the keys were rotated flat across the bank whe
 written, and the app **shuffles options at render time**, seeded from the question id plus a
 per-sitting salt. The order stays stable while you are looking at an item, and differs next
 time.
+
+## The look
+
+One palette, light. There is no dark variant on purpose: a single set of colours tuned
+once stays honest, where two sets drift until one of them is quietly wrong.
+
+It is built as an instrument rather than a dashboard. Structure comes from a grid of
+one-pixel rules, so there are no rounded corners and no shadows anywhere. IBM Plex Sans
+carries the text and IBM Plex Mono carries **every number**, which is what stops a figure
+reading as a label. Teal is the only accent; the five domain colours appear as small
+squares and never as fills.
+
+Both faces are self-hosted from `@fontsource`, latin subset, three weights each, about
+110 KB in total. A webfont link would have been smaller to set up and would have broken
+the promise at the top of this file.
 
 ## The scaled score is an approximation
 

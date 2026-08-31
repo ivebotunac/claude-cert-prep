@@ -3,6 +3,7 @@
   import { progress } from '$lib/stores/progress.svelte.js'
   import {
     questions, domains, scenarios, questionById, domainById,
+    questionsByDomain, questionsByScenario,
   } from '$lib/content.js'
   import { shuffle, pct } from '$lib/util.js'
 
@@ -82,6 +83,20 @@
     startedAt = Date.now()
   }
 
+  /** The one-click shortcuts in the side panel map back to a scope value. */
+  /** @type {Record<string, string>} */
+  const SHORTCUTS = {
+    Everything: 'all',
+    'Not yet attempted': 'unseen',
+    'Last answered wrong': 'missed',
+    'Answered both ways': 'shaky',
+    Flagged: 'flagged',
+    'Official samples': 'official',
+  }
+
+  /** @param {string} name */
+  const labelToScope = (name) => SHORTCUTS[name] ?? 'all'
+
   /** @param {string} value */
   function labelFor(value) {
     if (value.startsWith('domain:')) return domainById[value.slice(7)]?.name ?? value
@@ -123,100 +138,127 @@
 </script>
 
 {#if !session}
-  <h1 class="mb-1.5 text-[27px] font-semibold">Practice quiz</h1>
-  <p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
+  <h1 class="text-[24px] font-semibold">Practice quiz</h1>
+  <p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)] text-pretty">
     Immediate feedback after every item, with the reason each wrong option fails. Answers feed your
-    accuracy stats and the review lists.
+    accuracy figures and the review lists.
   </p>
 
-  <div class="card max-w-xl p-5">
-    <label class="label mb-1.5" for="scope">Scope</label>
-    <select id="scope" class="field mb-4 w-full" bind:value={scope}>
-      <option value="all">Everything ({pools.all} questions)</option>
-      <optgroup label="By domain">
-        {#each domains as d (d.id)}
-          <option value="domain:{d.id}">
-            {d.id} &middot; {d.name} ({questions.filter((q) => q.domain === d.id).length})
-          </option>
-        {/each}
-      </optgroup>
-      <optgroup label="By scenario">
-        {#each scenarios as s (s.id)}
-          <option value="scenario:{s.id}">
-            {s.id} &middot; {s.title} ({questions.filter((q) => q.scenario === s.id).length})
-          </option>
-        {/each}
-      </optgroup>
-      <optgroup label="By progress">
-        <option value="unseen">Not yet attempted ({pools.unseen})</option>
-        <option value="missed">Last answered wrong ({pools.missed})</option>
-        <option value="shaky">Answered both right and wrong ({pools.shaky})</option>
-        <option value="flagged">Flagged ({pools.flagged})</option>
-      </optgroup>
-      <optgroup label="Special">
-        <option value="official">Official sample questions ({pools.official})</option>
-      </optgroup>
-    </select>
+  <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start">
+    <div>
+      <div class="section mb-2.5">Scope</div>
+      <div class="card p-4">
+        <label class="label mb-1.5" for="scope">Draw from</label>
+        <select id="scope" class="field mb-4 w-full" bind:value={scope}>
+          <option value="all">Everything ({pools.all} questions)</option>
+          <optgroup label="By domain">
+            {#each domains as d (d.id)}
+              <option value="domain:{d.id}">
+                {d.id} &middot; {d.name} ({questionsByDomain[d.id]?.length ?? 0})
+              </option>
+            {/each}
+          </optgroup>
+          <optgroup label="By scenario">
+            {#each scenarios as sc (sc.id)}
+              <option value="scenario:{sc.id}">
+                {sc.id} &middot; {sc.title} ({questionsByScenario[sc.id]?.length ?? 0})
+              </option>
+            {/each}
+          </optgroup>
+          <optgroup label="By progress">
+            <option value="unseen">Not yet attempted ({pools.unseen})</option>
+            <option value="missed">Last answered wrong ({pools.missed})</option>
+            <option value="shaky">Answered both right and wrong ({pools.shaky})</option>
+            <option value="flagged">Flagged ({pools.flagged})</option>
+          </optgroup>
+          <optgroup label="Special">
+            <option value="official">Official sample questions ({pools.official})</option>
+          </optgroup>
+        </select>
 
-    <label class="label mb-1.5" for="length">Length</label>
-    <select id="length" class="field mb-5 w-full" bind:value={length}>
-      <option value="10">10 questions</option>
-      <option value="20">20 questions</option>
-      <option value="40">40 questions</option>
-      <option value="0">Everything in scope</option>
-    </select>
+        <span class="label mb-1.5" id="length-label">Length</span>
+        <div class="mb-4 flex gap-px bg-[var(--color-line)] p-px" role="group" aria-labelledby="length-label">
+          {#each [['10', '10', '10 questions'], ['20', '20', '20 questions'], ['40', '40', '40 questions'], ['0', 'all', 'Everything in scope']] as [value, text, name] (value)}
+            <button
+              class="grow py-2 font-mono text-[13px] transition-colors
+                {length === value
+                  ? 'bg-[var(--color-accent)] text-white'
+                  : 'bg-[var(--color-surface)] text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'}"
+              aria-label={name}
+              aria-pressed={length === value}
+              onclick={() => (length = value)}
+            >{text}</button>
+          {/each}
+        </div>
 
-    {#if !poolFor(scope).length}
-      <p class="mb-4 text-sm text-[var(--color-warn)]">
-        Nothing matches that scope yet. Answer some questions first, or pick another.
+        {#if !poolFor(scope).length}
+          <p class="mb-3 text-[14px] text-[var(--color-warn)]">
+            Nothing matches that scope yet. Answer some questions first, or pick another.
+          </p>
+        {/if}
+
+        <button
+          class="btn btn-primary w-full justify-center"
+          disabled={!poolFor(scope).length}
+          onclick={() => start(scope, Number(length))}
+        >
+          Start quiz
+        </button>
+      </div>
+    </div>
+
+    <div>
+      <div class="section mb-2.5">The bank</div>
+      <div class="card rows">
+        {#each [['Everything', pools.all], ['Not yet attempted', pools.unseen], ['Last answered wrong', pools.missed], ['Answered both ways', pools.shaky], ['Flagged', pools.flagged], ['Official samples', pools.official]] as [name, n] (name)}
+          <button
+            class="flex w-full items-baseline justify-between gap-4 px-4 py-2.5 text-left text-[14px] transition-colors hover:bg-[var(--color-surface-2)]"
+            onclick={() => start(labelToScope(String(name)), 20)}
+            disabled={!n}
+          >
+            <span class="text-[var(--color-ink-2)]">{name}</span>
+            <span class="font-mono">{n}</span>
+          </button>
+        {/each}
+      </div>
+      <p class="mt-3 font-mono text-[12px] leading-relaxed text-[var(--color-ink-3)]">
+        Questions are drawn at random from the scope. Option order is shuffled per sitting unless
+        you turn that off in <a href="#/settings">settings</a>.
       </p>
-    {/if}
-
-    <button
-      class="btn btn-primary w-full justify-center"
-      disabled={!poolFor(scope).length}
-      onclick={() => start(scope, Number(length))}
-    >
-      Start quiz
-    </button>
+    </div>
   </div>
-
-  <p class="mt-5 text-xs text-[var(--color-ink-3)]">
-    Questions are drawn at random from the scope. Option order is shuffled per sitting unless you
-    turn that off in <a href="#/settings" class="underline">settings</a>.
-  </p>
 {:else if done}
   {@const accuracy = pct(session.right, session.ids.length)}
-  <div class="mx-auto max-w-3xl">
-    <div class="card px-5 py-10 text-center">
-      <div class="font-serif text-6xl font-semibold leading-none">
-        {session.right}<span class="text-2xl text-[var(--color-ink-3)]">/{session.ids.length}</span>
+  <div class="max-w-3xl">
+    <div class="card px-6 py-10 text-center">
+      <div class="label">{session.label}</div>
+      <div class="mt-3 font-mono text-[58px] leading-none font-medium tracking-[-0.035em]">
+        {session.right}<span class="text-[25px] text-[var(--color-ink-3)]">/{session.ids.length}</span>
       </div>
       <p
-        class="mt-3 text-[17px] font-semibold {accuracy >= 70
-          ? 'text-[var(--color-ok)]'
-          : 'text-[var(--color-bad)]'}"
+        class="mt-3 font-mono text-[17px]"
+        style="color: {accuracy >= 70 ? 'var(--color-ok)' : 'var(--color-bad)'}"
       >
         {accuracy}% correct
       </p>
-      <p class="mt-3 text-sm text-[var(--color-ink-2)]">{session.label}</p>
       <div class="mt-6 flex flex-wrap justify-center gap-2">
         <button class="btn btn-primary" onclick={quit}>Another quiz</button>
         <a class="btn" href="#/review">Review mistakes</a>
-        <a class="btn btn-ghost" href="#/dashboard">Dashboard</a>
+        <a class="btn btn-ghost" href="#/dashboard">Overview</a>
       </div>
     </div>
   </div>
 {:else}
-  <div class="mx-auto mb-4 flex max-w-3xl items-center gap-3">
+  <div class="mb-3 flex max-w-3xl flex-wrap items-center gap-x-4 gap-y-2">
     <button class="btn btn-ghost btn-sm" onclick={quit}>&larr; End quiz</button>
+    <span class="font-mono text-[12.5px] text-[var(--color-ink-3)]">{session.label}</span>
     <div class="grow"></div>
-    <span class="text-xs text-[var(--color-ink-3)]">
+    <span class="font-mono text-[12.5px] text-[var(--color-ink-3)]">
       {session.right}/{session.answered} correct so far
     </span>
-  </div>
-  <div class="mx-auto mb-6 max-w-3xl">
-    <Meter value={pct(session.i, session.ids.length)} tone="clay" height="h-1" />
+    <div class="w-[120px] shrink-0">
+      <Meter value={pct(session.i, session.ids.length)} tone="accent" />
+    </div>
   </div>
 
   {#key current.id}

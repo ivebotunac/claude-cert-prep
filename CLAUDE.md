@@ -91,7 +91,11 @@ The content database is in memory regardless.
   `{#snippet}` and `{@render}`.
 - **Colours come from CSS variables only**: `var(--color-ink-2)`, `var(--color-surface)` and
   friends, written as `text-[var(--color-ink-2)]`. Never a raw hex, never `bg-slate-800`.
-  The dark theme is token swaps; a literal colour breaks it.
+  The one exception is a domain's own colour, which is data and arrives from the database.
+- **Nothing is rounded and nothing casts a shadow.** Structure is one-pixel rules. If a
+  border-radius or a box-shadow is creeping back in, the change is fighting the system.
+- **Every number is set in the mono face.** `font-mono` also turns on tabular figures, so
+  a column of them lines up. Prose is the sans; a figure in the sans reads as a label.
 - **Content strings go through `richText()`** from `$lib/util.js` and render with `{@html}`.
   That escapes HTML and wraps technical identifiers in `<code>`. UI labels written in the
   component do not need it.
@@ -101,6 +105,20 @@ The content database is in memory regardless.
 - `content.js` exports are module bindings assigned by `loadContent()`, not constants. They
   are populated before any view mounts, because `App.svelte` gates on `progress.ready` and
   `progress.load()` awaits `loadContent()` first. Read them; do not assign them.
+
+## The look
+
+One palette, light, defined once in `app.css`. There is no dark variant and no theme
+setting: a single set of colours tuned once stays honest, where two sets drift until one
+is quietly wrong. Do not add one back without deciding that trade again.
+
+IBM Plex Sans and IBM Plex Mono, self-hosted from `@fontsource` (latin subset, three
+weights each). They are `@import`ed at the top of `app.css`, not linked from a font host,
+because the app promises no network calls and that promise is worth more than the 110 KB.
+
+`.card` is a framed panel, not a floating one. `.rows` separates its children with the
+quieter rule. `.th` and `.td` are the table pair, `.label` the mono caption, `.section`
+the heading above a panel.
 
 ## Content
 
@@ -204,8 +222,9 @@ reproduces all of it.
   verbatim, and their value is being unaltered.
 - Put the content back into JSON, or add a build step that generates the database from
   something else. The database is the source.
-- Add a dependency without a reason that survives being asked twice. The runtime dependency
-  list is one entry long.
+- Add a dependency without a reason that survives being asked twice. The runtime list is
+  three entries: SQLite, and the two `@fontsource` packages that keep the typefaces local
+  so the app still has no network calls.
 - Make this repository public. `content/ccarf-content.sqlite3` holds a verbatim transcription
   of Anthropic's exam guide, including all 12 official sample questions and their keys.
 - Put `/Users/...` paths, credentials or personal references into tracked files.

@@ -4,26 +4,14 @@
   import { formatBytes } from '$lib/util.js'
   import { questions, flashcards, tasks } from '$lib/content.js'
 
-  const themes = [
-    { value: 'system', label: 'System' },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
-  ]
-
-  const backends = [
-    {
-      id: 'opfs-sahpool',
-      text: 'Origin Private File System, pool VFS. Persistent and the fastest of the three, but only one tab at a time can hold it.',
-    },
-    {
-      id: 'kvvfs',
-      text: 'A key-value VFS backed by localStorage. Persistent, same SQL, but capped at the few megabytes localStorage allows.',
-    },
-    {
-      id: 'memory',
-      text: 'Nothing is written to disk. The app runs, and everything you do is gone on the next reload.',
-    },
-  ]
+  const backends = {
+    'opfs-sahpool':
+      'Origin Private File System, pool VFS. Persistent and the fastest of the three, but only one tab at a time can hold it.',
+    kvvfs:
+      'A key-value VFS backed by localStorage. Persistent, the same SQL, but capped at the few megabytes localStorage allows.',
+    memory:
+      'Nothing is written to disk. The app runs, and everything you do is gone on the next reload.',
+  }
 
   /** @type {{ text: string, ok: boolean } | null} */
   let status = $state(null)
@@ -33,15 +21,6 @@
 
   /** @param {unknown} err */
   const message = (err) => (err instanceof Error ? err.message : String(err))
-
-  /** @param {string} value */
-  function pickTheme(value) {
-    progress.setTheme(value)
-    // the pre-paint script in index.html reads this mirror, since SQLite is async
-    try {
-      localStorage.setItem('ccarf-theme', value)
-    } catch {}
-  }
 
   async function doExport() {
     busy = true
@@ -116,197 +95,140 @@
   }
 </script>
 
-<h1 class="mb-1.5 text-[27px] font-semibold">Settings</h1>
-<p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
-  Preferences and the data behind them. Your progress is a SQLite database inside this browser. It
-  never leaves the machine, which also means no other device has a copy unless you export one.
-</p>
-
-<h2 class="mb-3 text-lg font-semibold">Appearance</h2>
-<div class="card flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
-  <div class="min-w-[14rem] grow">
-    <div class="text-[14.5px] font-medium">Theme</div>
-    <p class="mt-0.5 text-[13px] text-[var(--color-ink-2)]">
-      System follows your operating system and switches with it. Light and dark stay where you put
-      them.
-    </p>
-  </div>
-  <div
-    class="flex shrink-0 gap-1 rounded-lg border border-[var(--color-line)] bg-[var(--color-surface-2)] p-1"
-  >
-    {#each themes as t (t.value)}
-      <button
-        class="rounded-md px-3 py-1.5 text-[13.5px] font-medium transition-colors
-          {progress.theme === t.value
-          ? 'bg-[var(--color-surface)] text-[var(--color-ink)]'
-          : 'text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'}"
-        aria-pressed={progress.theme === t.value}
-        onclick={() => pickTheme(t.value)}
-      >
-        {t.label}
-      </button>
-    {/each}
-  </div>
-</div>
-
-<h2 class="mb-3 mt-9 text-lg font-semibold">Practice</h2>
-<div class="card flex flex-wrap items-center gap-x-6 gap-y-3 p-5">
-  <div class="min-w-[14rem] grow">
-    <div class="text-[14.5px] font-medium">Shuffle answer options</div>
-    <p class="mt-0.5 text-[13px] text-[var(--color-ink-2)]">
-      Options are reordered per question and per sitting, so the position of the right answer is
-      never a cue. The order holds steady inside one quiz or one mock attempt, and differs the next
-      time you meet the same question.
-    </p>
-  </div>
-  <button
-    class="btn shrink-0"
-    aria-pressed={progress.shuffleOptions}
-    onclick={() => progress.setShuffle(!progress.shuffleOptions)}
-  >
-    <span
-      class="inline-block h-2 w-2 rounded-full"
-      style="background: {progress.shuffleOptions ? 'var(--color-ok)' : 'var(--color-line-strong)'}"
-    ></span>
-    {progress.shuffleOptions ? 'On' : 'Off'}
-  </button>
-</div>
-
-<h2 class="mb-3 mt-9 text-lg font-semibold">Storage</h2>
-<div class="card p-5">
-  <div class="flex flex-wrap gap-x-10 gap-y-4">
-    <div>
-      <span class="label">Backend</span>
-      <div class="mt-1 font-mono text-[14.5px]">{progress.storage.backend}</div>
-    </div>
-    <div>
-      <span class="label">Survives a reload</span>
-      <div
-        class="mt-1 text-[14.5px] font-medium"
-        style="color: {progress.storage.persistent ? 'var(--color-ok)' : 'var(--color-bad)'}"
-      >
-        {progress.storage.persistent ? 'Yes' : 'No'}
+{#snippet row(
+  /** @type {string} */ label,
+  /** @type {string} */ desc,
+  /** @type {import('svelte').Snippet} */ control,
+)}
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 px-4 py-3.5">
+    <div class="min-w-0 grow basis-[18rem]">
+      <div class="text-[15px] font-medium">{label}</div>
+      <div class="mt-0.5 max-w-[76ch] text-[14px] leading-relaxed text-[var(--color-ink-2)]">
+        {desc}
       </div>
     </div>
-    <div>
-      <span class="label">Database size</span>
-      <div class="mt-1 font-mono text-[14.5px]">{formatBytes(progress.storage.bytes)}</div>
-    </div>
+    <div class="shrink-0">{@render control()}</div>
   </div>
+{/snippet}
 
-  <ul class="mt-5 flex flex-col gap-2.5 border-t border-[var(--color-line)] pt-4">
-    {#each backends as b (b.id)}
-      {@const active = b.id === progress.storage.backend}
-      <li
-        class="flex flex-wrap items-baseline gap-x-2 gap-y-1 text-[13px]
-          {active ? 'text-[var(--color-ink)]' : 'text-[var(--color-ink-3)]'}"
-      >
-        <code>{b.id}</code>
-        {#if active}
-          <span class="pill border-transparent bg-[var(--color-clay-soft)] text-[var(--color-clay-text)]">
-            In use
-          </span>
-        {/if}
-        <span class="min-w-[16rem] grow basis-0">{b.text}</span>
-      </li>
-    {/each}
-  </ul>
-
-  {#if !progress.storage.persistent}
-    <div class="mt-4 rounded-lg bg-[var(--color-warn-soft)] px-4 py-3 text-[13.5px] leading-relaxed">
-      <b>Nothing is being saved.</b>
-      This browser gave the app neither the file system pool nor localStorage, so the database is in
-      memory only and closing the tab throws it away. A private window or a second tab on the same
-      origin is the usual cause. Export before you leave, and import the file back once you are in a
-      normal window.
-    </div>
-  {:else if progress.storage.backend === 'kvvfs'}
-    <p class="mt-4 text-[13px] text-[var(--color-ink-2)]">
-      Persistent, but localStorage is small. If the database grows past the quota, writes start
-      failing. Export now and then.
-    </p>
-  {/if}
-</div>
-
-<h2 class="mb-3 mt-9 text-lg font-semibold">Your data</h2>
-<div class="card divide-y divide-[var(--color-line)] px-5">
-  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
-    <div class="min-w-[14rem] grow">
-      <div class="text-[14.5px] font-medium">Export</div>
-      <p class="mt-0.5 text-[13px] text-[var(--color-ink-2)]">
-        Downloads the whole database as one file. It is a real SQLite database, not a dump, so the
-        <code>sqlite3</code> CLI or DB Browser for SQLite will open it and read every table.
-      </p>
-    </div>
-    <button class="btn btn-primary shrink-0" disabled={busy} onclick={doExport}>
-      Export database
-    </button>
+{#snippet fact(/** @type {string} */ k, /** @type {string} */ v, tone = 'var(--color-ink)')}
+  <div class="flex items-baseline justify-between gap-4 px-4 py-2.5 text-[14px]">
+    <span class="text-[var(--color-ink-2)]">{k}</span>
+    <span class="font-mono" style="color: {tone}">{v}</span>
   </div>
+{/snippet}
 
-  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
-    <div class="min-w-[14rem] grow">
-      <div class="text-[14.5px] font-medium">Import</div>
-      <p class="mt-0.5 text-[13px] text-[var(--color-ink-2)]">
-        Loads an exported file and replaces everything currently stored here. There is no merge, so
-        export first if this browser holds progress you want to keep.
-      </p>
-    </div>
-    <input
-      class="hidden"
-      type="file"
-      accept=".sqlite3,.db"
-      bind:this={fileInput}
-      onchange={onFile}
-    />
-    <button class="btn shrink-0" disabled={busy} onclick={() => fileInput?.click()}>
-      Choose a file
-    </button>
-  </div>
-
-  <div class="flex flex-wrap items-center gap-x-6 gap-y-3 py-4">
-    <div class="min-w-[14rem] grow">
-      <div class="text-[14.5px] font-medium">Reset</div>
-      <p class="mt-0.5 text-[13px] text-[var(--color-ink-2)]">
-        Empties every table: reading marks, flashcard boxes, answers, flags and mock attempts. The
-        question bank and the blueprint are content, not progress, so they stay.
-      </p>
-    </div>
-    <button
-      class="btn btn-ghost shrink-0"
-      style="color: var(--color-bad)"
-      disabled={busy}
-      onclick={doReset}
-    >
-      Delete all progress
-    </button>
-  </div>
-</div>
+<h1 class="text-[24px] font-semibold">Settings</h1>
+<p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)]">
+  Everything here is local to this browser. Nothing is synced, nothing is backed up, and nothing is
+  visible to anyone else. Export is how a copy gets anywhere.
+</p>
 
 {#if status}
-  <p
-    role="status"
-    class="mt-3 rounded-lg px-4 py-3 text-[13.5px] leading-relaxed
-      {status.ok
-      ? 'bg-[var(--color-ok-soft)] text-[var(--color-ok)]'
-      : 'bg-[var(--color-bad-soft)] text-[var(--color-bad)]'}"
+  <div
+    class="card mb-5 border-l-2 px-4 py-3 text-[14px] leading-relaxed"
+    style="border-left-color: {status.ok ? 'var(--color-ok)' : 'var(--color-bad)'}"
   >
     {status.text}
-  </p>
+  </div>
 {/if}
 
-<h2 class="mb-3 mt-9 text-lg font-semibold">About</h2>
-<div class="card p-5 text-[14.5px] leading-relaxed text-[var(--color-ink-2)]">
-  <p>
-    The study material ships with the app as JSON: {tasks.length} task statements, {questions.length}
-    questions and {flashcards.length} flashcards, identical for everyone who opens it. Nothing is
-    fetched and there is no account, so the app works with the network off.
-  </p>
-  <p class="mt-2.5">
-    Your progress is the only thing that varies, and it lives in this browser alone. It is not
-    synced, not backed up and not visible to anyone else. Export is how a copy gets anywhere else.
-  </p>
-  <p class="mt-2.5">
-    Where the content came from, and what to read next, is listed on
-    <a href="#/resources" class="underline">Resources</a>.
-  </p>
+<div class="grid gap-6 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+  <div>
+    <div class="section mb-2.5">Your progress</div>
+    <div class="card rows">
+      {#snippet exportBtn()}
+        <button class="btn btn-primary" disabled={busy} onclick={doExport}>Export database</button>
+      {/snippet}
+      {@render row(
+        'Export',
+        'Writes a real .sqlite3 file. It opens in the sqlite3 CLI or DB Browser, so your study history is queryable outside this app.',
+        exportBtn,
+      )}
+
+      {#snippet importBtn()}
+        <input class="hidden" type="file" accept=".sqlite3,.db" bind:this={fileInput} onchange={onFile} />
+        <button class="btn" disabled={busy} onclick={() => fileInput?.click()}>Choose a file</button>
+      {/snippet}
+      {@render row(
+        'Import',
+        'Loads an exported file and replaces everything stored here. There is no merge, so export first if this browser holds progress you want to keep.',
+        importBtn,
+      )}
+
+      {#snippet resetBtn()}
+        <button class="btn btn-danger" disabled={busy} onclick={doReset}>Delete all progress</button>
+      {/snippet}
+      {@render row(
+        'Reset',
+        'Empties every table: reading marks, flashcard boxes, answers, flags and mock attempts. The question bank is content, not progress, so it stays.',
+        resetBtn,
+      )}
+    </div>
+
+    <div class="section mt-6 mb-2.5">Behaviour</div>
+    <div class="card rows">
+      {#snippet shuffleToggle()}
+        <button
+          class="flex h-[19px] w-[34px] items-center border p-[2px] transition-colors
+            {progress.shuffleOptions
+              ? 'border-[var(--color-accent)] bg-[var(--color-accent)]'
+              : 'border-[var(--color-line-strong)] bg-[var(--color-surface-2)]'}"
+          role="switch"
+          aria-checked={progress.shuffleOptions}
+          aria-label="Shuffle option order"
+          onclick={() => progress.setShuffle(!progress.shuffleOptions)}
+        >
+          <span
+            class="h-[13px] w-[13px] bg-white transition-transform
+              {progress.shuffleOptions ? 'translate-x-[15px]' : ''}"
+          ></span>
+        </button>
+      {/snippet}
+      {@render row(
+        'Shuffle option order',
+        'Options are relabelled A to D in a different order each sitting, seeded from the question id. Answer position can never become a cue.',
+        shuffleToggle,
+      )}
+
+      {#snippet noSetting()}
+        <span class="font-mono text-[12.5px] text-[var(--color-ink-3)]">no setting</span>
+      {/snippet}
+      {@render row(
+        'Light only',
+        'The interface is designed for one palette and does not follow the system dark setting. One set of colours, tuned once, is easier to keep honest than two.',
+        noSetting,
+      )}
+    </div>
+  </div>
+
+  <div>
+    <div class="section mb-2.5">Storage</div>
+    <div class="card rows">
+      {@render fact(
+        'Backend',
+        progress.storage.backend,
+        progress.storage.persistent ? 'var(--color-ok)' : 'var(--color-bad)',
+      )}
+      {@render fact('Persistent', progress.storage.persistent ? 'yes' : 'no')}
+      {@render fact('Size', formatBytes(progress.storage.bytes))}
+      <p class="px-4 py-2.5 text-[13.5px] leading-relaxed text-[var(--color-ink-2)]">
+        {backends[/** @type {keyof typeof backends} */ (progress.storage.backend)]}
+      </p>
+    </div>
+
+    <div class="section mt-6 mb-2.5">Study content</div>
+    <div class="card rows">
+      {@render fact('Guide revision', `v${progress.content.guideVersion ?? '?'}`)}
+      {@render fact('Exam code', progress.content.examCode ?? 'CCAR-F')}
+      {@render fact('Questions', String(questions.length))}
+      {@render fact('Flashcards', String(flashcards.length))}
+      {@render fact('Task statements', String(tasks.length))}
+      {@render fact('Size', formatBytes(Number(progress.content.bytes ?? 0)))}
+      <p class="px-4 py-2.5 text-[13.5px] leading-relaxed text-[var(--color-ink-2)]">
+        Attached read-only beside your progress. SQLite refuses a write to it, so nothing here can
+        rewrite an exam question, and an exported progress file carries none of it.
+      </p>
+    </div>
+  </div>
 </div>

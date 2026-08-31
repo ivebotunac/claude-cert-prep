@@ -136,7 +136,7 @@ const ESCAPE = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }
 export function richText(s) {
   const escaped = String(s ?? '').replace(/[&<>"]/g, (c) => ESCAPE[c])
   return escaped.replace(
-    /(`[^`]+`)|(\b(?:stop_reason|tool_choice|tool_use|tool_result|end_turn|custom_id|isError|isRetryable|errorCategory|allowedTools|fork_session|PostToolUse|PreToolUse|AgentDefinition|max_tokens|argument-hint|allowed-tools|retriable|detected_pattern|calculated_total|stated_total|conflict_detected|selectCount|Pydantic)\b)|(--?[a-z][a-z-]{1,22})|((?:~\/|\.)?[\w.~/-]*\.(?:json|md|tsx|ts|js|py|jsonl|sql))|(\.claude\/[\w./*-]+)|(\bcontext: fork\b)/g,
+    /(`[^`]+`)|(\b(?:stop_reason|tool_choice|tool_use|tool_result|end_turn|custom_id|isError|isRetryable|errorCategory|allowedTools|fork_session|PostToolUse|PreToolUse|AgentDefinition|max_tokens|argument-hint|allowed-tools|retriable|detected_pattern|calculated_total|stated_total|conflict_detected|selectCount|Pydantic)\b)|((?<![\w-])--?[a-z][a-z-]{1,22}(?![\w-]))|((?:~\/|\.)?[\w.~/-]*\.(?:json|md|tsx|ts|js|py|jsonl|sql))|(\.claude\/[\w./*-]+)|(\bcontext: fork\b)/g,
     (m) => `<code>${m.replace(/^`|`$/g, '')}</code>`,
   )
 }

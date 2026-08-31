@@ -27,14 +27,14 @@ test.describe('shell', () => {
   test('boots and shows the blueprint headline', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Where you stand' })).toBeVisible()
     await expect(page.locator('main > p').first()).toContainText('60 items in 120 minutes')
-    await expect(page.locator('main > p').first()).toContainText('Pass at 720')
+    await expect(page.locator('main > p').first()).toContainText('pass mark is 720')
   })
 
   test('lists all five domains with their weights', async ({ page }) => {
-    for (const [id, weight] of [
-      ['D1', '27%'], ['D2', '18%'], ['D3', '20%'], ['D4', '20%'], ['D5', '15%'],
-    ]) {
-      await expect(page.getByText(`${weight} ·`).first()).toBeVisible()
+    const rows = page.locator('main table tbody tr')
+    await expect(rows).toHaveCount(5)
+    for (const [i, weight] of ['27%', '18%', '20%', '20%', '15%'].entries()) {
+      await expect(rows.nth(i).locator('td').nth(1)).toHaveText(weight)
     }
   })
 
@@ -50,25 +50,6 @@ test.describe('shell', () => {
     expect(errors).toEqual([])
   })
 
-  test('theme toggles and persists across a reload', async ({ page }) => {
-    const theme = () => page.evaluate(() => document.documentElement.dataset.theme)
-    const toggle = page.getByRole('button', { name: 'Change theme' })
-
-    // Cycle until the resolved theme actually changes; system may already match
-    // whichever explicit value comes first in the cycle.
-    const start = await theme()
-    let changed = start
-    for (let i = 0; i < 3 && changed === start; i++) {
-      await toggle.click()
-      await page.waitForTimeout(150)
-      changed = await theme()
-    }
-    expect(changed).not.toBe(start)
-
-    await page.reload()
-    await expect(page.getByRole('heading', { name: 'Where you stand' })).toBeVisible()
-    expect(await theme()).toBe(changed)
-  })
 })
 
 test.describe('storage', () => {
@@ -102,7 +83,7 @@ test.describe('storage', () => {
 test.describe('quiz', () => {
   test('runs a question and reveals the explanation', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: '10 questions' }).click()
     await page.getByRole('button', { name: 'Start quiz' }).click()
 
     await expect(page.getByText('Question 1 of 10')).toBeVisible()
@@ -123,7 +104,7 @@ test.describe('quiz', () => {
 
   test('advances through questions and reports a score', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: '10 questions' }).click()
     await page.getByRole('button', { name: 'Start quiz' }).click()
 
     for (let i = 0; i < 10; i++) {
@@ -139,13 +120,16 @@ test.describe('quiz', () => {
 
   test('answers feed the dashboard accuracy figure', async ({ page }) => {
     await page.goto('/#/quiz')
-    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: '10 questions' }).click()
     await page.getByRole('button', { name: 'Start quiz' }).click()
-    await page.getByTestId('option').first().click()
+    // A multiple-response item will not submit until every key is picked, so
+    // clicking one option would silently record nothing on 14% of the bank.
+    const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
+    for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
     await page.getByRole('button', { name: 'Check answer' }).click()
 
     await page.goto('/#/dashboard')
-    await expect(page.getByText('1 answers logged')).toBeVisible()
+    await expect(page.getByText('1 of 279 answered')).toBeVisible()
   })
 
   test('keyboard keys A to D select an option', async ({ page }) => {
@@ -153,7 +137,7 @@ test.describe('quiz', () => {
     await page.getByRole('button', { name: 'Start quiz' }).click()
     await page.keyboard.press('c')
     const selected = page.getByTestId('option').nth(2)
-    await expect(selected).toHaveClass(/border-\[var\(--color-clay\)\]/)
+    await expect(selected).toHaveClass(/border-\[var\(--color-accent\)\]/)
   })
 
   test('a scoped quiz link starts immediately', async ({ page }) => {
@@ -176,7 +160,7 @@ test.describe('flashcards', () => {
   })
 
   test('the due badge in the nav reflects graded cards', async ({ page }) => {
-    const badge = page.locator('header a[href="#/cards"] span')
+    const badge = page.getByTestId('due-badge')
     const before = Number(await badge.innerText())
     await page.goto('/#/cards')
     await page.locator('main .card').first().click()
@@ -247,7 +231,7 @@ test.describe('mock exam', () => {
     await expect(page.getByTestId('scaled-score')).toBeVisible()
 
     await page.goto('/#/dashboard')
-    await expect(page.getByRole('link', { name: 'Report' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Open' }).first()).toBeVisible()
   })
 })
 
@@ -269,15 +253,18 @@ test.describe('option shuffling', () => {
 
   test('can be turned off in settings', async ({ page }) => {
     await page.goto('/#/settings')
-    const toggle = page.getByRole('button', { name: /^(On|Off)$/ }).first()
-    const before = await toggle.innerText()
+    const toggle = page.getByRole('switch', { name: 'Shuffle option order' })
+    const before = await toggle.getAttribute('aria-checked')
     await toggle.click()
     await page.waitForTimeout(200)
-    await expect(toggle).not.toHaveText(before)
+    await expect(toggle).not.toHaveAttribute('aria-checked', String(before))
 
     await page.reload()
     await page.goto('/#/settings')
-    await expect(page.getByRole('button', { name: /^(On|Off)$/ }).first()).not.toHaveText(before)
+    await expect(page.getByRole('switch', { name: 'Shuffle option order' })).not.toHaveAttribute(
+      'aria-checked',
+      String(before),
+    )
   })
 })
 
@@ -327,7 +314,7 @@ test.describe('export and import', () => {
     page.on('dialog', (d) => d.accept())
 
     await page.goto('/#/quiz')
-    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: '10 questions' }).click()
     await page.getByRole('button', { name: 'Start quiz' }).click()
     const need = Number((await page.locator('main p').nth(1).innerText()).match(/Select (\d+)/)?.[1] ?? 1)
     for (let k = 0; k < need; k++) await page.getByTestId('option').nth(k).click()
@@ -355,7 +342,7 @@ test.describe('export and import', () => {
     // And the content is still attached: a quiz can still draw a question, which it
     // cannot do if content.questions went away with the old connection.
     await page.goto('/#/quiz')
-    await page.getByLabel('Length').selectOption('10')
+    await page.getByRole('button', { name: '10 questions' }).click()
     await page.getByRole('button', { name: 'Start quiz' }).click()
     await expect(page.getByText('Question 1 of 10')).toBeVisible()
     await expect(page.getByTestId('option')).toHaveCount(4)

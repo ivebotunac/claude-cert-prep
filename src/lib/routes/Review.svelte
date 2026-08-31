@@ -66,8 +66,8 @@
   }
 </script>
 
-<h1 class="mb-1.5 text-[27px] font-semibold">Worth another look</h1>
-<p class="mb-7 max-w-[68ch] text-[var(--color-ink-2)]">
+<h1 class="text-[24px] font-semibold">Worth another look</h1>
+<p class="mt-1 mb-5 max-w-[76ch] text-[15px] text-[var(--color-ink-2)] text-pretty">
   Three lists, three different problems. Open any row to see the key and the reason every option
   passes or fails, then drill the whole list as a quiz when you want it tested rather than read.
 </p>
@@ -88,7 +88,7 @@
   />
 </div>
 
-<p class="mt-3 max-w-[68ch] text-sm text-[var(--color-ink-2)]">
+<p class="mt-3 max-w-[68ch] text-[14px] text-[var(--color-ink-2)]">
   The inconsistent list is where the real gaps hide. Getting an item right once and wrong another
   time usually means you recognised the wording rather than the reasoning, and that is exactly what
   a reworded exam item will catch.
@@ -98,13 +98,13 @@
   {#each lists as l (l.key)}
     <button
       class="btn btn-sm {active === l.key
-        ? 'border-[var(--color-clay)] bg-[var(--color-clay-soft)] text-[var(--color-clay-text)]'
+        ? 'border-[var(--color-accent)] bg-[var(--color-accent-soft)] text-[var(--color-accent)]'
         : ''}"
       onclick={() => (active = l.key)}
       aria-pressed={active === l.key}
     >
       {l.label}
-      <span class="font-mono text-xs {active === l.key ? '' : 'text-[var(--color-ink-3)]'}">
+      <span class="font-mono text-[12.5px] {active === l.key ? '' : 'text-[var(--color-ink-3)]'}">
         {l.items.length}
       </span>
     </button>
@@ -120,13 +120,13 @@
 
 {#if current.items.length}
   <div class="mb-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-    <p class="grow text-sm text-[var(--color-ink-2)]">{current.blurb}</p>
+    <p class="grow text-[14px] text-[var(--color-ink-2)]">{current.blurb}</p>
     <a class="btn btn-primary btn-sm" href="#/quiz?list={current.key}">
       Drill these {current.items.length} as a quiz
     </a>
   </div>
 
-  <div class="card divide-y divide-[var(--color-line)] overflow-hidden">
+  <div class="card divide-y divide-[var(--color-line-soft)] overflow-hidden">
     {#each current.items as item (item.id)}
       {@const stats = progress.answers.get(item.id)}
       {@const isOpen = open.has(item.id)}
@@ -137,16 +137,16 @@
           aria-expanded={isOpen}
           aria-controls="review-{item.id}"
         >
-          <span class="mt-1 w-3 shrink-0 text-[11px] text-[var(--color-ink-3)]">
+          <span class="mt-1 w-3 shrink-0 text-[12.5px] text-[var(--color-ink-3)]">
             {isOpen ? '▾' : '▸'}
           </span>
           <DomainBadge id={item.domain} size="sm" />
           <span class="min-w-0 grow">
             <span class="flex flex-wrap items-center gap-2">
-              <span class="font-mono text-xs text-[var(--color-ink-2)]">{item.task}</span>
+              <span class="font-mono text-[12.5px] text-[var(--color-ink-2)]">{item.task}</span>
               <span class="pill">{tally(stats)}</span>
             </span>
-            <span class="mt-1.5 block text-[13.5px] leading-snug text-[var(--color-ink-2)]">
+            <span class="mt-1.5 block text-[15.5px] leading-snug text-[var(--color-ink-2)]">
               {@html richText(excerpt(item.stem))}
             </span>
           </span>
@@ -156,7 +156,7 @@
         {#if isOpen}
           <div
             id="review-{item.id}"
-            class="border-t border-[var(--color-line)] bg-[var(--color-paper)] px-4 py-6"
+            class="border-t border-[var(--color-line)] bg-[var(--color-bg)] px-4 py-6"
           >
             <Question question={item} revealed={true} showScenario={true} />
           </div>

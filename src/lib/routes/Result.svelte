@@ -66,14 +66,14 @@
 {:else}
   <div class="card px-5 py-9 text-center">
     <div
-      class="font-serif text-[3.9rem] font-semibold leading-none tracking-tight"
+      class="font-mono text-[3.9rem] font-semibold leading-none tracking-tight"
       style="color: {passed ? 'var(--color-ok)' : 'var(--color-bad)'}"
       data-testid="scaled-score"
     >
       {attempt.scaled}
     </div>
     <p
-      class="mt-2.5 text-[17px] font-semibold {passed
+      class="mt-2.5 text-[19px] font-semibold {passed
         ? 'text-[var(--color-ok)]'
         : 'text-[var(--color-bad)]'}"
     >
@@ -83,13 +83,13 @@
       {attempt.correct} of {attempt.total} correct ({pct(attempt.correct, attempt.total)}%)
       in {formatClock(elapsed)}
     </p>
-    <p class="mt-2 text-xs text-[var(--color-ink-3)]">
+    <p class="mt-2 text-[12.5px] text-[var(--color-ink-3)]">
       Scenarios drawn: {scenarioNames}
     </p>
   </div>
 
-  <h2 class="mb-3 mt-9 text-lg font-semibold">Percent correct by domain</h2>
-  <div class="card divide-y divide-[var(--color-line)] px-5">
+  <h2 class="section mt-6 mb-2.5">Percent correct by domain</h2>
+  <div class="card divide-y divide-[var(--color-line-soft)] px-5">
     {#each domains as d (d.id)}
       {@const row = breakdown.find((b) => b.domain === d.id)}
       {@const total = Number(row?.total ?? 0)}
@@ -98,8 +98,8 @@
       <div class="flex items-center gap-3.5 py-3">
         <DomainBadge id={d.id} />
         <div class="min-w-0 grow">
-          <div class="text-[14.5px] font-medium">{d.name}</div>
-          <div class="mt-0.5 text-[12.5px] text-[var(--color-ink-3)]">
+          <div class="text-[16.5px] font-medium">{d.name}</div>
+          <div class="mt-0.5 text-[14px] text-[var(--color-ink-3)]">
             {correct}/{total} correct &middot; blueprint weight {d.weight}%
           </div>
           <div class="mt-2"><Meter value={p} /></div>
@@ -113,14 +113,14 @@
         >{p}%</span>
       </div>
     {/each}
-    <p class="py-3 text-xs text-[var(--color-ink-3)]">
+    <p class="py-3 text-[12.5px] text-[var(--color-ink-3)]">
       Domain percentages are informational on the real score report and are not used to determine
       pass or fail. Only the total scaled score is.
     </p>
   </div>
 
-  <h2 class="mb-1.5 mt-9 text-lg font-semibold">Item review</h2>
-  <p class="mb-4 text-sm text-[var(--color-ink-2)]">
+  <h2 class="section mt-6 mb-1.5">Item review</h2>
+  <p class="mb-4 text-[14px] text-[var(--color-ink-2)]">
     Every item with your answer, the key, and why each distractor fails.
   </p>
 
@@ -155,10 +155,10 @@
                 ? 'bg-[var(--color-ok-soft)] text-[var(--color-ok)]'
                 : 'bg-[var(--color-bad-soft)] text-[var(--color-bad)]'}"
             >{a?.correct ? '✓' : '✗'}</span>
-            <span class="mt-0.5 shrink-0 font-mono text-xs text-[var(--color-ink-3)]">
+            <span class="mt-0.5 shrink-0 font-mono text-[12.5px] text-[var(--color-ink-3)]">
               {question.domain} {question.task}
             </span>
-            <span class="min-w-0 grow text-sm">
+            <span class="min-w-0 grow text-[14px]">
               {@html richText(question.stem.slice(0, 110))}{question.stem.length > 110 ? '…' : ''}
             </span>
           </button>
