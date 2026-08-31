@@ -29,7 +29,8 @@ src/lib/content.js              reads it at boot into the shapes the views rende
 src/lib/db/                     schema.sql (progress), content-schema.sql (content),
                                 worker.js, index.js (RPC), queries.js (all SQL)
 src/lib/stores/                 progress.svelte.js: the reactive mirror of the database
-src/lib/routes/                 one component per view, registered in App.svelte's `views`
+src/lib/routes/                 one component per view, registered in App.svelte's `views`.
+                                Practice tracks the guide's build steps in the progress database
 src/lib/components/             Question, Nav, Meter, Stat, DomainBadge, Empty
 tests/unit/                     util.js, and content.test.js: the question bank audit
 tests/e2e/                      playwright against a real preview build
@@ -142,8 +143,18 @@ distractor and NULL for every correct option**. `select_count` is set only on `t
 and must equal the number of correct options. `source` is `'official'` for the 12 verbatim
 guide questions and `'derived'` for the rest.
 
+**A flashcard is not a quiz item.** The front is a term, a field, a threshold or a named
+pattern. The back is what it is and when it applies. The deck once carried 138 fronts ending in
+a question mark, which meant Flashcards and Quiz tested the same thing and the Leitner schedule
+measured recognition of a question rather than recall of the material. `checkCardShape` in the
+audit fails the suite on a front that ends in `?`.
+
 Flashcards are `flashcards` plus `card_tags`. `task` may be `'meta'` for exam mechanics. One
 fact per card; a back listing more than three things gets split.
+
+`task_examples` holds the worked code under a task statement. **The guide contains no code at
+all**, in any of its thirty-nine pages, so these are ours and the view labels them as such. They
+exist for about a third of the thirty statements, only where the rule stays vague without one.
 
 `docs` holds the reference material that the Resources and Path pages render whole rather
 than query: policies, the reading list, the learning path, partner tiers. It is JSON text on
@@ -218,8 +229,11 @@ reproduces all of it.
 
 ## Do not
 
-- Edit the twelve rows with `source = 'official'`. Those are the guide's own samples,
-  verbatim, and their value is being unaltered.
+- Edit the twelve rows with `source = 'official'`. Those are the guide's own samples, verbatim
+  down to the punctuation, and their value is being unaltered. The em dash in `off-12` is the
+  guide's; the audit exempts quoted samples from the house-style ban for exactly that reason.
+- Turn a flashcard front back into a question. See the flashcard rule above.
+- Add a code example to a task statement whose rule is already clear without one.
 - Put the content back into JSON, or add a build step that generates the database from
   something else. The database is the source.
 - Add a dependency without a reason that survives being asked twice. The runtime list is

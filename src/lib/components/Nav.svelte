@@ -1,19 +1,16 @@
 <script>
   import { router } from '$lib/router.svelte.js'
-  import { progress } from '$lib/stores/progress.svelte.js'
 
   const links = [
     { to: 'dashboard', label: 'Overview' },
     { to: 'study', label: 'Study' },
     { to: 'cards', label: 'Cards' },
+    { to: 'practice', label: 'Practice' },
     { to: 'quiz', label: 'Quiz' },
     { to: 'exam', label: 'Mock exam' },
     { to: 'review', label: 'Review' },
-    { to: 'path', label: 'Path' },
     { to: 'resources', label: 'Resources' },
   ]
-
-  const due = $derived(progress.ready ? progress.cardSummary().due : 0)
 </script>
 
 <header class="no-print sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-surface)]">
@@ -48,12 +45,6 @@
               : 'border-transparent text-[var(--color-ink-2)] hover:text-[var(--color-ink)]'}"
         >
           {link.label}
-          {#if link.to === 'cards' && due > 0}
-            <span
-              class="bg-[var(--color-accent)] px-1.5 py-px font-mono text-[11.5px] leading-[1.3] text-white"
-              data-testid="due-badge"
-            >{due}</span>
-          {/if}
         </a>
       {/each}
     </nav>

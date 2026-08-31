@@ -21,6 +21,15 @@ CREATE TABLE IF NOT EXISTS reading (
   read_at     INTEGER NOT NULL
 );
 
+-- The guide's own preparation steps and hands-on exercises, ticked off as they
+-- are done. Reading tells you what the exam covers; this is the only table that
+-- records having built any of it.
+CREATE TABLE IF NOT EXISTS practice (
+  item_id  TEXT PRIMARY KEY,
+  kind     TEXT NOT NULL CHECK (kind IN ('prep', 'exercise')),
+  done_at  INTEGER NOT NULL
+);
+
 -- ---------------------------------------------------------------- flashcards
 
 -- Current Leitner state per card. One row per card the learner has ever graded.

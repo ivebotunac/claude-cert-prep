@@ -18,6 +18,7 @@ import { DAY_MS, pct, today } from '$lib/util.js'
 
 class Progress {
   /** @type {Set<string>} */ read = $state(new Set())
+  /** @type {Set<string>} */ practice = $state(new Set())
   /** @type {Map<string, any>} */ cards = $state(new Map())
   /** @type {Map<string, any>} */ answers = $state(new Map())
   /** @type {Set<string>} */ flags = $state(new Set())
@@ -49,6 +50,7 @@ class Progress {
         q.attemptHistory(), q.domainStats(), q.answerTotals(),
         q.questionSelection(), q.lastSelections(),
       ])
+    this.practice = await q.practiceDone()
     this.read = read
     this.cards = cards
     this.answers = answers
@@ -98,6 +100,26 @@ class Progress {
     const s = new Set(this.read)
     for (const t of list) (value ? s.add(t.id) : s.delete(t.id))
     this.read = s
+  }
+
+  /* ---------------------------------------------------------------- practice */
+
+  /**
+   * @param {string} itemId
+   * @param {'prep' | 'exercise'} kind
+   */
+  async togglePractice(itemId, kind) {
+    const next = !this.practice.has(itemId)
+    await q.setPractice(itemId, kind, next)
+    const s = new Set(this.practice)
+    next ? s.add(itemId) : s.delete(itemId)
+    this.practice = s
+  }
+
+  /** @param {string[]} ids */
+  practiceSummary(ids) {
+    const done = ids.filter((id) => this.practice.has(id)).length
+    return { done, total: ids.length, pct: pct(done, ids.length) }
   }
 
   /* ---------------------------------------------------------------- cards */

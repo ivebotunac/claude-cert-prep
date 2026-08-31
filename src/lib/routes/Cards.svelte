@@ -122,7 +122,8 @@
         <span class="pill">{card.task === 'meta' ? 'Exam mechanics' : `Task ${card.task}`}</span>
         <span class="pill">Box {currentBox + 1}</span>
       </div>
-      <p class="mt-6 text-center font-mono text-[24px] leading-snug">
+      <div class="label mt-6 text-center">Term</div>
+      <p class="mt-2 text-center text-[27px] leading-snug font-medium text-pretty">
         {@html richText(card.front)}
       </p>
     {/snippet}
@@ -136,14 +137,15 @@
         {@render face(current)}
         <div class="grow"></div>
         <span class="mt-6 text-center text-[12.5px] text-[var(--color-ink-3)]">
-          Click to reveal, or press space
+          Click to reveal what it is, or press space
         </span>
       </button>
     {:else}
       <div class="card flex min-h-[15rem] flex-col p-6">
         {@render face(current)}
-        <hr class="my-5 border-0 border-t border-[var(--color-line)]" />
-        <div class="mx-auto max-w-[58ch] text-[17px] leading-relaxed">
+        <hr class="my-5 border-0 border-t border-dashed border-[var(--color-line-strong)]" />
+        <div class="label text-center">What it is</div>
+        <div class="mx-auto mt-2 max-w-[58ch] text-center text-[17px] leading-relaxed text-pretty">
           {@html richText(current.back)}
         </div>
         <div class="grow"></div>
@@ -207,7 +209,8 @@
   {/each}
 </div>
 <p class="mt-3 text-[14px] text-[var(--color-ink-2)]">
-  {summary.due} due, {summary.learned} learned, {summary.total} total in this filter.
+  <span data-testid="due-count">{summary.due}</span> due, {summary.learned} learned,
+  {summary.total} total in this filter.
 </p>
 <p class="mt-1 text-[12.5px] text-[var(--color-ink-3)]">
   Box 1 comes back the same day, then a card you keep getting right returns after 1, 3, 7, 21 and

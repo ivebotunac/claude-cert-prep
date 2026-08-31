@@ -294,6 +294,31 @@
               </div>
             {/if}
 
+            {#each t.examples ?? [] as ex (ex.title)}
+              <div class="mt-5 border border-[var(--color-line)] bg-[var(--color-surface)]">
+                <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1 border-b border-[var(--color-line-soft)] px-4 py-2.5">
+                  <span class="label">In practice</span>
+                  <span class="min-w-0 grow text-[14px] font-medium">{ex.title}</span>
+                  <span class="font-mono text-[12px] text-[var(--color-ink-3)]">{ex.lang}</span>
+                </div>
+                <!-- Not escaped through richText: this is source, and it is
+                     rendered as text so every character survives as written. -->
+                <pre class="overflow-x-auto px-4 py-3.5 font-mono text-[13px] leading-relaxed"><code
+                    class="border-0 bg-transparent p-0 whitespace-pre">{ex.code}</code></pre>
+                {#if ex.note}
+                  <p
+                    class="border-t border-[var(--color-line-soft)] px-4 py-2.5 text-[13.5px] leading-relaxed text-[var(--color-ink-2)] text-pretty"
+                  >
+                    {@html richText(ex.note)}
+                  </p>
+                {/if}
+              </div>
+              <p class="mt-1.5 font-mono text-[12px] text-[var(--color-ink-3)]">
+                Our example. The guide itself contains no code, and the exam asks for judgement
+                rather than syntax.
+              </p>
+            {/each}
+
             <div class="mt-4 flex flex-wrap items-center gap-2.5">
               {#if n}
                 <a class="btn btn-sm" href="#/quiz?task={t.id}">Drill task {t.id}</a>

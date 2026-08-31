@@ -76,7 +76,7 @@ export const LEITNER_DAYS = [0, 1, 3, 7, 21, 60]
 export async function loadContent() {
   const [
     domainRows, scenarioRows, scenarioDomains, scenarioProps,
-    taskRows, bulletRows, questionRows, optionRows, cardRows, tagRows, docRows,
+    taskRows, bulletRows, exampleRows, questionRows, optionRows, cardRows, tagRows, docRows,
   ] = await Promise.all([
     all('SELECT * FROM content.domains ORDER BY ord'),
     all('SELECT * FROM content.scenarios ORDER BY ord'),
@@ -84,6 +84,7 @@ export async function loadContent() {
     all('SELECT scenario_id, text FROM content.scenario_props ORDER BY scenario_id, ord'),
     all('SELECT * FROM content.tasks ORDER BY ord'),
     all('SELECT task_id, kind, text FROM content.task_bullets ORDER BY task_id, ord'),
+    all('SELECT task_id, lang, title, code, note FROM content.task_examples ORDER BY task_id, ord'),
     all('SELECT * FROM content.questions ORDER BY id'),
     all('SELECT question_id, key, text, is_correct, why FROM content.options ORDER BY question_id, ord'),
     all('SELECT * FROM content.flashcards ORDER BY ord'),
@@ -122,6 +123,19 @@ export async function loadContent() {
     const kinds = (bulletsByTask[b.task_id] ??= {})
     ;(kinds[b.kind] ??= []).push(b.text)
   }
+  // Worked examples are ours, not the guide's, and only exist for the task
+  // statements where the rule stays vague without one. The view says so.
+  /** @type {Record<string, any[]>} */
+  const examplesByTask = {}
+  for (const e of exampleRows) {
+    ;(examplesByTask[e.task_id] ??= []).push({
+      lang: e.lang,
+      title: e.title,
+      code: e.code,
+      note: e.note ?? '',
+    })
+  }
+
   tasks = taskRows.map((r) => ({
     id: r.id,
     domain: r.domain,
@@ -130,6 +144,7 @@ export async function loadContent() {
     knowledge: bulletsByTask[r.id]?.knowledge ?? [],
     skills: bulletsByTask[r.id]?.skills ?? [],
     traps: bulletsByTask[r.id]?.traps ?? [],
+    examples: examplesByTask[r.id] ?? [],
   }))
 
   // A question's options, the keys that are correct, and the reason each of the

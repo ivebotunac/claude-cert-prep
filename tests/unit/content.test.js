@@ -410,12 +410,46 @@ function checkCoverage() {
   }
 }
 
+
+/* ------------------------------------------------------------------ cards */
+
+/**
+ * A flashcard is not a quiz item.
+ *
+ * The deck once carried 138 fronts that ended in a question mark, which meant
+ * Flashcards and Quiz tested the same thing and the Leitner schedule measured
+ * recognition of a question rather than recall of the material. A front is a
+ * term, a field, a threshold or a named pattern. The back is what it is and when
+ * it applies.
+ */
+function checkCardShape() {
+  const asked = cards.filter((c) => c.front.trim().endsWith('?'))
+  if (asked.length) {
+    add('ERROR', 'cards', `${asked.length} card fronts are questions, not terms: ${asked.slice(0, 8).map((c) => c.id).join(', ')}`)
+  }
+
+  const long = cards.filter((c) => c.front.length > 70)
+  if (long.length) {
+    add('WARN', 'cards', `${long.length} fronts run over 70 chars, which usually means the front is carrying the answer: ${long.slice(0, 6).map((c) => c.id).join(', ')}`)
+  }
+
+  const lengths = cards.map((c) => c.front.length).sort((a, b) => a - b)
+  add('INFO', 'cards', `front length: median ${lengths[Math.floor(lengths.length / 2)]} chars, longest ${lengths[lengths.length - 1]}`)
+  add('INFO', 'cards', `back length: mean ${fmt0(cards.reduce((n, c) => n + c.back.length, 0) / cards.length)} chars`)
+}
+
 /* ------------------------------------------------------------------ prose */
+
 
 function checkProse() {
   for (const item of [...qs, ...cards]) {
     const text = JSON.stringify(item)
-    if (text.includes('—')) add('WARN', item.id, 'contains an em dash (house style bans them)')
+    // The house style governs what we write. The twelve official samples are
+    // quoted from the guide exactly as it prints them, em dash and all, and
+    // their whole value is being unaltered.
+    if (item.source !== 'official' && text.includes('—')) {
+      add('WARN', item.id, 'contains an em dash (house style bans them)')
+    }
     if ((item.stem ?? '').includes('  ')) add('WARN', item.id, 'double space in stem')
   }
 
@@ -495,5 +529,6 @@ describe('question bank', () => {
   audits('invents no flags or config paths', checkInventedIdentifiers)
   audits('has no duplicate stems or options', checkDuplicates)
   audits('covers every domain and task statement', checkCoverage)
+  audits('keeps flashcards as terms, not questions', checkCardShape)
   audits('follows the house style', checkProse)
 })

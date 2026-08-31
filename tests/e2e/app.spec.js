@@ -42,7 +42,7 @@ test.describe('shell', () => {
     const errors = []
     page.on('pageerror', (e) => errors.push(e.message))
 
-    for (const view of ['study', 'cards', 'quiz', 'exam', 'review', 'path', 'resources', 'settings']) {
+    for (const view of ['study', 'cards', 'quiz', 'exam', 'review', 'resources', 'settings']) {
       await page.goto(`/#/${view}`)
       await expect(page.locator('main')).not.toBeEmpty()
       await page.waitForTimeout(150)
@@ -159,15 +159,14 @@ test.describe('flashcards', () => {
     await expect(page.locator('main')).toContainText(/due/)
   })
 
-  test('the due badge in the nav reflects graded cards', async ({ page }) => {
-    const badge = page.getByTestId('due-badge')
-    const before = Number(await badge.innerText())
+  test('grading a card drops the due count', async ({ page }) => {
     await page.goto('/#/cards')
+    const due = page.getByTestId('due-count')
+    const before = Number(await due.innerText())
     await page.locator('main .card').first().click()
     await page.getByRole('button', { name: 'Good' }).click()
     await page.waitForTimeout(400)
-    const after = Number(await badge.innerText())
-    expect(after).toBe(before - 1)
+    expect(Number(await due.innerText())).toBe(before - 1)
   })
 })
 
@@ -295,7 +294,7 @@ test.describe('accessibility and layout', () => {
   })
 
   test('every page has exactly one h1', async ({ page }) => {
-    for (const view of ['dashboard', 'study', 'quiz', 'exam', 'review', 'path', 'resources', 'settings']) {
+    for (const view of ['dashboard', 'study', 'quiz', 'exam', 'review', 'resources', 'settings']) {
       await page.goto(`/#/${view}`)
       await page.waitForTimeout(150)
       const count = await page.locator('main h1').count()
@@ -346,5 +345,63 @@ test.describe('export and import', () => {
     await page.getByRole('button', { name: 'Start quiz' }).click()
     await expect(page.getByText('Question 1 of 10')).toBeVisible()
     await expect(page.getByTestId('option')).toHaveCount(4)
+  })
+})
+
+test.describe('practice', () => {
+  test('ticks are stored and survive a reload', async ({ page }) => {
+    await page.goto('/#/practice')
+    const ticks = page.getByRole('checkbox', { name: 'Mark done' })
+    await expect(ticks.first()).toBeVisible()
+    await expect(ticks.first()).toHaveAttribute('aria-checked', 'false')
+
+    await ticks.first().click()
+    await ticks.nth(2).click()
+    await expect(ticks.first()).toHaveAttribute('aria-checked', 'true')
+
+    await page.reload()
+    await expect(page.getByRole('heading', { name: 'Practice' })).toBeVisible()
+    const after = page.getByRole('checkbox', { name: 'Mark done' })
+    await expect(after.first()).toHaveAttribute('aria-checked', 'true')
+    await expect(after.nth(1)).toHaveAttribute('aria-checked', 'false')
+    await expect(after.nth(2)).toHaveAttribute('aria-checked', 'true')
+  })
+
+  test('an exercise expands to the guide own steps', async ({ page }) => {
+    await page.goto('/#/practice')
+    await page.getByText(/Build a Multi-Tool Agent/i).first().click()
+    await expect(page.getByText('Steps', { exact: true })).toBeVisible()
+    await expect(page.locator('main ol li').first()).toBeVisible()
+  })
+})
+
+test.describe('flashcards are terms', () => {
+  test('a card front is a term and the back is revealed separately', async ({ page }) => {
+    await page.goto('/#/cards')
+    await expect(page.getByText('Term', { exact: true })).toBeVisible()
+    // The back is not on screen until the card is turned.
+    await expect(page.getByText('What it is', { exact: true })).toHaveCount(0)
+
+    const front = await page.locator('main .card p').first().innerText()
+    expect(front.trim().endsWith('?')).toBe(false)
+
+    await page.locator('main .card').first().click()
+    await expect(page.getByText('What it is', { exact: true })).toBeVisible()
+    await expect(page.getByRole('button', { name: /^Good/ })).toBeVisible()
+  })
+})
+
+test.describe('flags', () => {
+  test('a flag set during a quiz survives a reload and reaches Review', async ({ page }) => {
+    await page.goto('/#/quiz')
+    await page.getByRole('button', { name: '10 questions' }).click()
+    await page.getByRole('button', { name: 'Start quiz' }).click()
+    await page.getByRole('button', { name: 'Flag' }).click()
+    await expect(page.getByRole('button', { name: 'Flagged' })).toBeVisible()
+
+    await page.reload()
+    await page.goto('/#/review')
+    await page.getByRole('button', { name: /^Flagged/ }).click()
+    await expect(page.locator('main').getByText('1', { exact: true }).first()).toBeVisible()
   })
 })

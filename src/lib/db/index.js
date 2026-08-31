@@ -35,7 +35,7 @@ import schemaSql from './schema.sql?raw'
 import contentUrl from '$content/ccarf-content.sqlite3?url'
 
 /** Bump when schema.sql needs a migration, and add the migration in worker.js. */
-const SCHEMA_VERSION = 1
+const SCHEMA_VERSION = 2
 
 /** @typedef {'opfs-sahpool' | 'kvvfs' | 'memory'} Backend */
 

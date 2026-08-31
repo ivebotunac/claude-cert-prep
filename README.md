@@ -126,7 +126,8 @@ FROM answers GROUP BY domain ORDER BY accuracy;
 - **Study**: the blueprint as readable material. Each task statement expands to its
   knowledge and skills bullets plus the traps that punish skimming. Tick one when you can
   explain it without looking.
-- **Flashcards**: Leitner boxes at 1, 3, 7, 21 and 60 days. Space reveals, then 1/2/3 grades.
+- **Flashcards**: a term on the front, what it is on the back. Leitner boxes at 1, 3, 7, 21 and 60
+  days. Space reveals, then 1/2/3 grades. Deliberately not questions: that is what Quiz is for.
 - **Quiz**: immediate feedback with the reason each distractor fails. Scope by domain,
   scenario, task statement, or to what you have not tried, got wrong, or flagged.
 - **Mock exam**: 60 items in 120 minutes, four scenarios of six, sampled to the
@@ -134,10 +135,10 @@ FROM answers GROUP BY domain ORDER BY accuracy;
   until you submit. Closing the tab does not lose the attempt, and the clock keeps running.
 - **Review**: what you got wrong, what you flagged, and what you have answered both ways at
   different times. The third list is where the real gaps hide.
-- **Path**: the four learning path courses with module lists, OnVUE mechanics, the
-  credential family, partner tiers, and the distractor patterns worth memorising.
-- **Resources**: the official prep plan and exercises, reading list, in-scope and
-  out-of-scope lists, policies.
+- **Practice**: the guide's own seven things to build and four hands-on exercises, with steps,
+  ticked off as you do them. Reading tells you what the exam covers; this is the part you do.
+- **Resources**: exam strategy, the four architectural tensions, the distractor patterns, the
+  reading list, in-scope and out-of-scope lists, exam-day mechanics and policies.
 - **Settings**: option shuffling, storage backend, content stamp, export, import, reset.
 
 ## Editing the content
@@ -172,6 +173,8 @@ Current state of the bank:
 | Near-duplicate stems | none |
 | Questions per domain vs mock draw | 4.4x to 4.9x |
 | Multiple-response share | 14% |
+| Flashcard fronts that are questions | none |
+| Official samples verbatim against the guide | 12 of 12 |
 
 Answer position is guarded twice: the keys were rotated flat across the bank when it was
 written, and the app **shuffles options at render time**, seeded from the question id plus a
@@ -206,6 +209,16 @@ Multiple-choice and multiple-response; each item states how many to select. Pass
 100–1,000 scale. USD 125 per attempt. Valid 12 months, renewed with a free non-proctored
 assessment. Delivered by Pearson VUE, online proctored or at a test centre. Retake waits:
 14 days, then 30, then 90; four attempts per rolling 12 months.
+
+## The guide has no code
+
+Not one line, in thirty-nine pages. The exam is judgement on prose scenarios, and the twelve
+official samples are prose with prose options.
+
+The worked examples under about a third of the task statements are therefore **ours**, written
+to make an abstract rule concrete, and the app says so under every one. They exist only where
+the rule stays vague without them. Adding code to a statement that is already clear teaches
+syntax the exam never asks about.
 
 ## Sources
 

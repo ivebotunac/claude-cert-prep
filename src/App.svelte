@@ -7,11 +7,11 @@
   import Dashboard from '$lib/routes/Dashboard.svelte'
   import Study from '$lib/routes/Study.svelte'
   import Cards from '$lib/routes/Cards.svelte'
+  import Practice from '$lib/routes/Practice.svelte'
   import Quiz from '$lib/routes/Quiz.svelte'
   import Exam from '$lib/routes/Exam.svelte'
   import Result from '$lib/routes/Result.svelte'
   import Review from '$lib/routes/Review.svelte'
-  import Path from '$lib/routes/Path.svelte'
   import Settings from '$lib/routes/Settings.svelte'
   import Resources from '$lib/routes/Resources.svelte'
 
@@ -20,11 +20,11 @@
     dashboard: Dashboard,
     study: Study,
     cards: Cards,
+    practice: Practice,
     quiz: Quiz,
     exam: Exam,
     result: Result,
     review: Review,
-    path: Path,
     resources: Resources,
     settings: Settings,
   }

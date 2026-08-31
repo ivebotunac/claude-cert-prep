@@ -66,6 +66,31 @@ export async function readCountByDomain() {
   return Object.fromEntries(rows.map((r) => [r.domain, Number(r.n)]))
 }
 
+/* ------------------------------------------------------------------ practice */
+
+/** @returns {Promise<Set<string>>} ids of the prep steps and exercises done */
+export async function practiceDone() {
+  const rows = await all('SELECT item_id FROM practice')
+  return new Set(rows.map((r) => String(r.item_id)))
+}
+
+/**
+ * @param {string} itemId
+ * @param {'prep' | 'exercise'} kind
+ * @param {boolean} done
+ */
+export async function setPractice(itemId, kind, done) {
+  if (done) {
+    await run(
+      'INSERT INTO practice (item_id, kind, done_at) VALUES (?, ?, ?) ' +
+        'ON CONFLICT (item_id) DO UPDATE SET done_at = excluded.done_at',
+      [itemId, kind, now()],
+    )
+  } else {
+    await run('DELETE FROM practice WHERE item_id = ?', [itemId])
+  }
+}
+
 /* ------------------------------------------------------------------ cards */
 
 /** @returns {Promise<Map<string, {box: number, dueAt: number, seen: number, lapses: number}>>} */

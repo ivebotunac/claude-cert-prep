@@ -77,6 +77,24 @@ CREATE TABLE task_bullets (
   PRIMARY KEY (task_id, kind, ord)
 );
 
+-- A worked example under a task statement.
+--
+-- The guide contains no code at all, in any of its 39 pages: the exam is
+-- judgement on prose scenarios. These examples are OURS, written to make an
+-- abstract rule concrete, and the app labels them as such. They exist only for
+-- the task statements where the rule stays vague without one, which is about a
+-- third of the thirty. Do not add one to a statement that is already clear;
+-- code where none is needed teaches syntax the exam never asks about.
+CREATE TABLE task_examples (
+  task_id TEXT NOT NULL REFERENCES tasks (id),
+  ord     INTEGER NOT NULL,
+  lang    TEXT NOT NULL,
+  title   TEXT NOT NULL,
+  code    TEXT NOT NULL,
+  note    TEXT,
+  PRIMARY KEY (task_id, ord)
+);
+
 -- ---------------------------------------------------------------- questions
 
 CREATE TABLE questions (
