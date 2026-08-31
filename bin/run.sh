@@ -1,10 +1,5 @@
 #!/bin/sh
-# One command from a fresh clone to the app in a browser.
-#
-# Opening dist/index.html by double-clicking cannot work, and no build flag
-# fixes it: a module script loaded from file:// has the origin "null" and the
-# browser blocks it. The worker, the content database fetch and OPFS all need a
-# real origin too. So the app is served, and this script is the whole ceremony.
+# One command from a fresh clone to the app in a browser: install, build, serve.
 set -e
 cd "$(dirname "$0")/.."
 

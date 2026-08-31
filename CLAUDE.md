@@ -22,6 +22,18 @@ npm run test:all                         # both
 **Before committing**: `npm run check` at 0 errors and `npm run test:all` green. The content
 audit is inside `test:unit`, so a bank that regressed fails the suite.
 
+## Deployment
+
+Firebase App Hosting, with automatic rollouts on, so **a push to `main` is a deploy** and it
+reaches the public site in about a minute. The README has the URL; `firebase
+apphosting:backends:list` names the project and backend behind it, which are deliberately
+not written down here.
+
+App Hosting has adapters for Next.js and Angular only. A Vite SPA falls through to the Node
+buildpack, which needs a process on `$PORT`, which is what `server.js` is. It reads and
+gzips each file in `dist/` once and then serves it from memory; compressing per request was
+slow enough on the wasm binary and the content database to be measurable at the browser.
+
 ## Architecture
 
 ```
@@ -35,6 +47,8 @@ src/lib/routes/                 one component per view, registered in App.svelte
 src/lib/components/             Question, Nav, Meter, Stat, DomainBadge, Empty
 tests/unit/                     util.js, and content.test.js: the question bank audit
 tests/e2e/                      playwright against a real preview build
+server.js                       serves dist/ in production. Not used locally
+apphosting.yaml                 App Hosting build and run settings
 ```
 
 ### Two databases, one connection
@@ -240,8 +254,9 @@ reproduces all of it.
 - Add a dependency without a reason that survives being asked twice. The runtime list is
   three entries: SQLite, and the two `@fontsource` packages that keep the typefaces local
   so the app still has no network calls.
-- Make this repository public. `content/ccarf-content.sqlite3` holds a verbatim transcription
-  of Anthropic's exam guide, including all 12 official sample questions and their keys.
+- Make this repository public. The deployed site already serves the same content, by an
+  explicit decision on 2026-08-31, but the repository stays private: a public repo also
+  exposes the history and the bank in a form that is trivially forkable.
 - Put `/Users/...` paths, credentials or personal references into tracked files.
 - Hard-code a colour, or add a route without registering it in `App.svelte`.
 
