@@ -8,11 +8,12 @@ Nothing to install and nothing to sign up for. It runs entirely in your browser,
 answers, flashcard boxes and mock attempts are stored on your own machine and never sent
 anywhere.
 
-Vibe coded start to finish, and then made to behave: 48 unit tests, 54 browser tests, and a
-content audit that fails the build if the question bank drifts. The vibes got it built. The
-tests are why you can trust it with a real exam.
+Vibe coded start to finish, and then made to behave: 60 unit tests, 54 browser tests, a
+content audit that fails the build if the question bank drifts, and a second audit that checks
+every published figure against the official exam guide shipped beside it. The vibes got it
+built. The tests are why you can trust it with a real exam.
 
-**279 practice questions**, 12 of them the official samples word for word, **140 flashcards**,
+**279 practice questions**, 12 of them the official samples word for word, **142 flashcards**,
 all **30 task statements** from the blueprint, the guide's own build exercises, and a timed
 mock exam that draws to the real domain weights.
 
@@ -29,6 +30,10 @@ mock exam that draws to the real domain weights.
 | **Review** | What you got wrong, what you flagged, and what you have answered both ways |
 | **Resources** | Exam strategy, the four architectural tensions, distractor patterns, scope lists |
 | **Settings** | Export your progress, import it back, or start over |
+
+Clone it and open Claude Code inside, and `/cert:quiz`, `/cert:drill` and `/cert:explain` coach
+you from the same bank in the terminal, one question at a time, with the answer withheld until
+you have given yours.
 
 ## Exam facts
 

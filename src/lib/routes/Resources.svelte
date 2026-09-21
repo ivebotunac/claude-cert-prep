@@ -97,6 +97,25 @@
       {/each}
     </div>
 
+    <div class="mt-6 mb-1.5 flex items-baseline gap-2.5">
+      <span class="section">Pairs that get mixed up</span>
+      <span class="font-mono text-[12px] text-[var(--color-ink-3)]">{context.distinctions.items.length} of them</span>
+    </div>
+    <p class="mb-2.5 max-w-[76ch] text-[14px] text-[var(--color-ink-2)] text-pretty">
+      {@html richText(context.distinctions.intro)}
+    </p>
+    <div class="card rows">
+      {#each context.distinctions.items as item (item.t)}
+        <div class="px-4 py-3.5">
+          <div class="text-[15px] font-medium">{@html richText(item.t)}</div>
+          <p class="mt-1 text-[13px] text-[var(--color-accent)]">{@html richText(item.q)}</p>
+          <p class="mt-1.5 max-w-[80ch] text-[14px] leading-relaxed text-[var(--color-ink-2)] text-pretty">
+            {@html richText(item.b)}
+          </p>
+        </div>
+      {/each}
+    </div>
+
     <div class="mt-6 mb-1.5"><span class="section">Distractor patterns</span></div>
     <p class="mb-2.5 max-w-[76ch] text-[14px] text-[var(--color-ink-2)] text-pretty">
       Every one of these turns up as a wrong answer in the official samples. Recognising the pattern is

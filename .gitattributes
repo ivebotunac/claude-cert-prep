@@ -4,3 +4,8 @@
 # The textconv driver is per-clone, so run this once after cloning:
 #   git config diff.sqlite.textconv 'sqlite3 "$1" .dump'
 *.sqlite3 binary diff=sqlite
+
+# The extracted guide is one very long line by design, see bin/guide-text.sh.
+# A line diff on it says nothing, so git is told not to try.
+content/exam-guide.txt -diff
+*.pdf binary

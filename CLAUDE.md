@@ -3,7 +3,7 @@
 Study app for the **Claude Certified Architect – Foundations** exam (CCAR-F).
 Svelte 5 (runes), Vite, Tailwind v4, SQLite WASM in a worker. Static build, no backend.
 
-The app is small and finished. **Most work here is content work**: 279 questions, 140
+The app is small and finished. **Most work here is content work**: 279 questions, 142
 flashcards and the blueprint, and whether that content is factually correct and free of the
 tells that let someone pass a practice test without knowing the material.
 
@@ -14,9 +14,10 @@ tells that let someone pass a practice test without knowing the material.
 npm run dev                              # dev server
 npm run build                            # static build into dist/
 npm run check                            # type check via JSDoc; must be 0 errors
-npm run test:unit                        # vitest: util.js, and the content audit
+npm run test:unit                        # vitest: util.js, the content audit, the guide check
 npm run test:e2e                         # playwright, chromium + mobile
 npm run test:all                         # both
+./bin/guide-text.sh                      # re-extract content/exam-guide.txt after a new PDF
 ```
 
 **Before committing**: `npm run check` at 0 errors and `npm run test:all` green. The content
@@ -38,6 +39,9 @@ slow enough on the wasm binary and the content database to be measurable at the 
 
 ```
 content/ccarf-content.sqlite3   the study material. The source of truth, edited with SQL.
+content/exam-guide.pdf          the official guide v1.0, the source of truth above that one
+content/exam-guide.txt          the same, whitespace stripped, so a test can read it
+.claude/                        the terminal coach: exam-coach skill, /cert: commands
 src/lib/content.js              reads it at boot into the shapes the views render
 src/lib/db/                     schema.sql (progress), content-schema.sql (content),
                                 worker.js, index.js (RPC), queries.js (all SQL)
@@ -45,7 +49,8 @@ src/lib/stores/                 progress.svelte.js: the reactive mirror of the d
 src/lib/routes/                 one component per view, registered in App.svelte's `views`.
                                 Practice tracks the guide's build steps in the progress database
 src/lib/components/             Question, Nav, Meter, Stat, DomainBadge, Empty
-tests/unit/                     util.js, and content.test.js: the question bank audit
+tests/unit/                     util.js, content.test.js (the bank audit), guide.test.js
+                                (every published figure against the guide's own words)
 tests/e2e/                      playwright against a real preview build
 server.js                       serves dist/ in production. Not used locally
 apphosting.yaml                 App Hosting build and run settings
@@ -212,6 +217,38 @@ Invisible to a schema check, and both let someone score well knowing nothing.
    distractors are one-liners. Target: longest in under 45% of items, no more than ~25 chars
    above the mean distractor. Fix by *tightening the key* and *giving distractors real
    substance*, never by padding. Shuffling does nothing for this one.
+
+## The guide is in the repository, and tested against
+
+`content/exam-guide.pdf` is the official v1.0 guide, thirty-nine pages, and
+`content/exam-guide.txt` is the same document with **all** whitespace removed. That looks
+wrong and is not: the guide's typesetting breaks glyph runs inside words, so every extractor
+returns "Orchestr a tion", and with the whitespace gone a comparison is exact again. A grep
+for an identifier such as `fork_session` still works.
+
+`tests/unit/guide.test.js` compares the database to that text: the exam facts in `docs.meta`,
+the five domain weights, all thirty task titles, the six scenario titles, both scope lists,
+and the twelve official samples with their forty-eight options, word for word. It also pins
+the item-format sentence the web gets wrong. A revision past v1.0 therefore fails the suite
+instead of quietly disagreeing with the content, which is what used to happen.
+
+Replacing the PDF means running `./bin/guide-text.sh` in the same breath. It needs Swift,
+so it is macOS only; nothing else here is. What the test cannot reach is `docs.policies`:
+retakes, renewal and the Pearson mechanics are published on the certification pages rather
+than in the guide, so those still rest on a manual read.
+
+## The terminal coach
+
+`.claude/` holds an `exam-coach` skill and `/cert:quiz`, `/cert:drill` and `/cert:explain`,
+which drill the same bank in Claude Code for when the app is not the right surface, such as
+from a phone. Everything goes through `.claude/skills/exam-coach/scripts/bank.mjs`, a
+dependency-free reader over the content database via the `sqlite3` CLI.
+
+Two rules in it are load-bearing. `ask` never prints the key, because the learner reads the
+transcript, so the session asks, waits, then calls `key`. And nothing is generated: an
+invented question has no audited distractors and no `why`, which is the whole value of the
+bank. The skill writes one file, `context/coach/state.md`, which is a record of terminal
+sittings only; the app's own progress lives in the browser and cannot be read from here.
 
 ## Sources of truth, in priority order
 

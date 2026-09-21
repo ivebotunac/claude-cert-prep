@@ -508,7 +508,7 @@ function audits(name, check) {
 describe('question bank', () => {
   it('holds the whole blueprint', () => {
     expect(qs.length).toBe(279)
-    expect(cards.length).toBe(140)
+    expect(cards.length).toBe(142)
     expect(taskIds.length).toBe(30)
     expect(domains.length).toBe(5)
     expect(scenarios.length).toBe(6)
