@@ -60,12 +60,22 @@ for (let i = 0; i < rest.length; i++) {
 }
 
 const count = Math.min(Number(flags.count ?? 5) || 5, 25)
-const filters = []
-if (flags.domain) filters.push(`domain = ${lit(flags.domain.toUpperCase())}`)
-if (flags.task) filters.push(`task = ${lit(flags.task)}`)
-if (flags.scenario) filters.push(`scenario = ${lit(flags.scenario.toUpperCase())}`)
-if (flags.exclude) filters.push(`id NOT IN (${list(flags.exclude)})`)
-const where = filters.length ? `WHERE ${filters.join(' AND ')}` : ''
+
+/**
+ * A WHERE clause built only from the filters the table can answer, so
+ * `cards --scenario S1` says flashcards have no scenario instead of handing the
+ * learner a SQL parse error.
+ * @param {string[]} columns
+ */
+function where(columns) {
+  const has = (c) => columns.includes(c)
+  const parts = []
+  if (flags.domain) parts.push(has('domain') ? `domain = ${lit(flags.domain.toUpperCase())}` : fail('--domain does not apply here'))
+  if (flags.task) parts.push(has('task') ? `task = ${lit(flags.task)}` : fail('--task does not apply here'))
+  if (flags.scenario) parts.push(has('scenario') ? `scenario = ${lit(flags.scenario.toUpperCase())}` : fail('only questions carry a scenario; drop --scenario'))
+  if (flags.exclude) parts.push(`id NOT IN (${list(flags.exclude)})`)
+  return parts.length ? `WHERE ${parts.join(' AND ')}` : ''
+}
 
 /* ------------------------------------------------------------------- commands */
 
@@ -113,7 +123,7 @@ const commands = {
 
   /** Items to put to the learner. No key, no explanation: call `key` after they answer. */
   ask() {
-    const qs = rows(`SELECT id, domain, task, scenario, type, select_count, stem FROM questions ${where} ORDER BY RANDOM() LIMIT ${count}`)
+    const qs = rows(`SELECT id, domain, task, scenario, type, select_count, stem FROM questions ${where(['domain', 'task', 'scenario', 'id'])} ORDER BY RANDOM() LIMIT ${count}`)
     if (!qs.length) fail('nothing matched that filter')
     for (const q of qs) {
       const howMany = q.type === 'multi' ? `select ${q.select_count}` : 'select one'
@@ -146,7 +156,7 @@ const commands = {
 
   /** Flashcard fronts. The back is a separate call, for the same reason `ask` withholds the key. */
   cards() {
-    const cs = rows(`SELECT id, domain, task, front FROM flashcards ${where} ORDER BY RANDOM() LIMIT ${count}`)
+    const cs = rows(`SELECT id, domain, task, front FROM flashcards ${where(['domain', 'task', 'id'])} ORDER BY RANDOM() LIMIT ${count}`)
     if (!cs.length) fail('nothing matched that filter')
     for (const c of cs) console.log(`[${c.id}] ${c.domain} ${c.task}  ${c.front}`)
     console.log(`\nids: ${cs.map((c) => c.id).join(',')}`)
